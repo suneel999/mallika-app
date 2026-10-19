@@ -1,0 +1,60 @@
+# Python
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials.json
+secrets/
+.cursor/mcp.json
+.cursor/fetch_stitch.py
+.cursor/stitch-projects.json
+.cursor/stitch-screens.json
+.cursor/stitch/
+
+# Local databases and logs
+*.sqlite3
+db.sqlite3
+*.log
+
+# Django / build
+staticfiles/
+media/
+dist/
+build/
+
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+coverage/
+
+# Node (future admin frontend)
+node_modules/
+
+# IDE and OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Local Android, iOS, and Gradle files
+local.properties
+key.properties
+**/.gradle/
+**/Pods/

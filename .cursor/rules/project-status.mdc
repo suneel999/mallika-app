@@ -1,0 +1,14 @@
+---
+description: Update the project status when a big feature is built
+alwaysApply: true
+---
+
+# Project status
+
+After a big feature, update `docs/STATUS.md` in the same change. A big feature is a new patient flow, API area, model set, admin workflow, or completed Stitch screen.
+
+- Add a dated row to the big-features table.
+- Refresh the "Now" summary and the area table.
+- Record only checks that actually ran.
+
+Do not update status for a small fix. Follow `AGENTS.md`.
