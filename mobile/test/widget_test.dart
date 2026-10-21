@@ -5,6 +5,7 @@ import 'package:mallika_hospitals/core/api/api_exception.dart';
 import 'package:mallika_hospitals/core/api/auth_api.dart';
 import 'package:mallika_hospitals/core/api/booking_api.dart';
 import 'package:mallika_hospitals/core/api/catalogue_api.dart';
+import 'package:mallika_hospitals/core/api/updates_api.dart';
 import 'package:mallika_hospitals/core/session/session_controller.dart';
 import 'package:mallika_hospitals/features/bookings/booking_screens.dart';
 import 'package:mallika_hospitals/core/session/token_store.dart';
@@ -91,6 +92,21 @@ void main() {
     expect(find.text('Cancellation requested'), findsOneWidget);
   });
 
+  testWidgets('updates tab shows a stored hospital message', (tester) async {
+    final session = await _signedIn(
+      api: _LinkedProfiles(),
+      bookings: _ConsultationOptions(),
+      updates: _OneUpdate(),
+    );
+    await _open(tester, MallikaApp(session: session));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Updates'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('The hospital confirmed MAL-BK-000001.'), findsOneWidget);
+  });
+
   testWidgets('welcome leads to mobile number entry', (tester) async {
     await _open(tester, MallikaApp(session: SessionController.preview(Gate.signedOut)));
 
@@ -162,11 +178,13 @@ Future<SessionController> _signedIn({
   AuthApi? api,
   BookingApi? bookings,
   CatalogueApi? catalogue,
+  UpdatesApi? updates,
 }) async {
   final session = SessionController(
     api: api ?? AuthApi(),
     bookings: bookings,
     catalogue: catalogue,
+    updates: updates,
     tokens: MemoryTokenStore(),
   );
   session.gate = Gate.ready;
@@ -220,6 +238,23 @@ class _HeartService extends CatalogueApi {
   }) async {
     return const [
       CatalogueService(id: 'svc-1', name: 'Heart checkup', serviceType: 'health_checkup'),
+    ];
+  }
+}
+
+class _OneUpdate extends UpdatesApi {
+  @override
+  Future<List<HospitalBanner>> banners(String access) async => const [];
+
+  @override
+  Future<List<HospitalUpdate>> notifications(String access) async {
+    return const [
+      HospitalUpdate(
+        id: 'update',
+        title: 'Mallika Hospitals',
+        body: 'The hospital confirmed MAL-BK-000001.',
+        createdAt: '2026-10-21T10:00:00+05:30',
+      ),
     ];
   }
 }

@@ -4,22 +4,35 @@ import '../api/api_exception.dart';
 import '../api/auth_api.dart';
 import '../api/booking_api.dart';
 import '../api/catalogue_api.dart';
+import '../api/updates_api.dart';
 import 'token_store.dart';
 
 enum Gate { booting, signedOut, needsProfile, ready, unreachable }
 
 class SessionController extends ChangeNotifier {
-  SessionController({AuthApi? api, CatalogueApi? catalogue, BookingApi? bookings, TokenStore? tokens})
-      : api = api ?? AuthApi(),
-        catalogue = catalogue ?? CatalogueApi(),
-        bookings = bookings ?? BookingApi(),
-        tokens = tokens ?? SecureTokenStore();
+  SessionController({
+    AuthApi? api,
+    CatalogueApi? catalogue,
+    BookingApi? bookings,
+    UpdatesApi? updates,
+    TokenStore? tokens,
+  }) : api = api ?? AuthApi(),
+       catalogue = catalogue ?? CatalogueApi(),
+       bookings = bookings ?? BookingApi(),
+       updates = updates ?? UpdatesApi(),
+       tokens = tokens ?? SecureTokenStore();
 
-  factory SessionController.preview(Gate gate, {CatalogueApi? catalogue, BookingApi? bookings}) {
+  factory SessionController.preview(
+    Gate gate, {
+    CatalogueApi? catalogue,
+    BookingApi? bookings,
+    UpdatesApi? updates,
+  }) {
     final session = SessionController(
       api: AuthApi(),
       catalogue: catalogue,
       bookings: bookings,
+      updates: updates,
       tokens: MemoryTokenStore(),
     );
     session.gate = gate;
@@ -48,6 +61,7 @@ class SessionController extends ChangeNotifier {
   final AuthApi api;
   final CatalogueApi catalogue;
   final BookingApi bookings;
+  final UpdatesApi updates;
   final TokenStore tokens;
 
   Gate gate = Gate.booting;
@@ -152,6 +166,14 @@ class SessionController extends ChangeNotifier {
 
   Future<List<CatalogueService>> loadServices({String search = ''}) {
     return _authed((access) => catalogue.services(access, search: search));
+  }
+
+  Future<List<HospitalUpdate>> loadUpdates() {
+    return _authed(updates.notifications);
+  }
+
+  Future<List<HospitalBanner>> loadBanners() {
+    return _authed(updates.banners);
   }
 
   Future<BookingOptions> loadBookingOptions() {

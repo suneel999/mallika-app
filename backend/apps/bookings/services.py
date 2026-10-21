@@ -215,6 +215,9 @@ def review_booking(actor, booking_id, status, confirmed_for_raw, staff_note) -> 
             note=note,
             metadata={},
         )
+        from apps.notifications.services import record_booking_update
+
+        record_booking_update(booking)
     return booking
 
 

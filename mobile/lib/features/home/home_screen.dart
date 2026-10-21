@@ -6,6 +6,7 @@ import '../../core/session/session_controller.dart';
 import '../../core/api/api_exception.dart';
 import '../../core/api/booking_api.dart';
 import '../bookings/booking_screens.dart';
+import '../updates/updates_screen.dart';
 import 'home_content.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -20,7 +21,7 @@ class HomeScreen extends StatelessWidget {
       backgroundColor: MallikaColors.background,
       body: Column(
         children: [
-          const _HomeHeader(),
+          _HomeHeader(session: session),
           Expanded(
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
@@ -49,7 +50,9 @@ class HomeScreen extends StatelessWidget {
 }
 
 class _HomeHeader extends StatelessWidget {
-  const _HomeHeader();
+  const _HomeHeader({required this.session});
+
+  final SessionController session;
 
   @override
   Widget build(BuildContext context) {
@@ -132,7 +135,7 @@ class _HomeHeader extends StatelessWidget {
             ),
           ),
           IconButton(
-            onPressed: () => _soon(context),
+            onPressed: () => _openUpdates(context, session),
             icon: const Icon(Icons.notifications_outlined, color: Colors.white),
             tooltip: 'Notifications',
           ),
@@ -658,6 +661,10 @@ class _HomeBottomNav extends StatelessWidget {
           );
           return;
         }
+        if (index == 2) {
+          _openUpdates(context, session);
+          return;
+        }
         if (index == 3 && onOpenProfile != null) {
           onOpenProfile!();
           return;
@@ -680,6 +687,14 @@ void _openRequest(BuildContext context, SessionController session, {bool consult
   Navigator.of(context).push(
     MaterialPageRoute<void>(
       builder: (_) => BookingRequestScreen(session: session, consultation: consultation),
+    ),
+  );
+}
+
+void _openUpdates(BuildContext context, SessionController session) {
+  Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (_) => UpdatesScreen(session: session),
     ),
   );
 }

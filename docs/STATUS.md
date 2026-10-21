@@ -6,17 +6,17 @@ Last updated: 21 October 2026.
 
 ## Now
 
-A patient can sign in, set up a profile, add family members, and request a consultation or a published service. Consultation uses the one published doctor, a date, and a time. The patient does not pick a department or a doctor, and the app takes no payment. Staff can review a request and a patient can ask to cancel. PostgreSQL is still required for a normal local server. Tests use SQLite.
+A patient can sign in, set up a profile, add family members, and request a consultation or a published service. Consultation uses the one published doctor, a date, and a time. The patient does not pick a department or a doctor, and the app takes no payment. Staff can review a request. A hospital-system check is stored separately, and status changes appear in Updates without a push or SMS provider. PostgreSQL is still required for a normal local server. Tests use SQLite.
 
 ## Areas
 
 | Area | State | What exists |
 | --- | --- | --- |
-| Backend | Sign-in, profiles, catalogue, booking requests, and staff review | OTP session, staff password sign-in, family profiles, read-only catalogue, booking requests, staff status changes, and patient cancellation requests |
-| Mobile | Sign-in through booking requests | Splash through profile and family, consultation date and time, published services by id, the bookings list, and a cancellation request |
+| Backend | Sign-in through updates | OTP session, staff password sign-in, family profiles, catalogue, bookings, staff review, HIMS reconciliation, in-app updates, device tokens, and banners. Push and SMS are not sent |
+| Mobile | Sign-in through updates | Splash through profile and family, consultation and published services, bookings, cancellation, and the Updates tab |
 | Admin | Not started | Stack recommendation only, in `admin/README.md` |
 | Infra | Not started | AWS notes only, in `infra/README.md` |
-| Data | Accounts, profiles, catalogue, and bookings | User, OTP challenge, refresh session, patient profile, family link, department, doctor, service, booking, and booking event. No prices. Reconciliation is not stored yet |
+| Data | Accounts through updates | User, OTP challenge, refresh session, patient profile, family link, catalogue, booking, cancellation, HIMS reconciliation, device token, notification, notification attempt, and banner. No prices. No image files |
 
 ## Big features
 
@@ -29,6 +29,8 @@ A patient can sign in, set up a profile, add family members, and request a consu
 | 21 Oct 2026 | Service catalogue | Read-only departments, doctors, and services. Doctors can belong to more than one department. No prices, and no invented hospital names are seeded. |
 | 21 Oct 2026 | Booking request | A signed-in patient requests one published service, or a consultation with the one published doctor, for themselves or a linked family member. The patient chooses a date and a listed time. The request stays `requested` (shown as Pending). A repeated Idempotency-Key returns the same booking. |
 | 21 Oct 2026 | Staff review | Staff sign in with a password, move a request through review, and confirm a time. A patient can ask to cancel. The agreed time stays until that cancellation is accepted. Confirming a booking does not record a hospital-system check. |
+| 21 Oct 2026 | Hospital-system check | Staff record `not_checked`, `checked_available`, `entered_in_hims`, `mismatch`, or `not_applicable` on a booking and can read that check on the booking. That status stays independent of the booking status. There is no live hospital-system connection. |
+| 21 Oct 2026 | Updates | A booking status change is stored for that patient and shown on the Updates tab. Device tokens can be registered. Banners are listed only while published. No push, SMS, or image file is sent. |
 
 ## Stitch screens
 
@@ -46,8 +48,8 @@ Address, emergency number `108`, specialist names, accreditation lines, and Telu
 
 ## Not built
 
-HIMS reconciliation, notifications, the admin dashboard, and AWS deployment. Catalogue rows, including the one consultation doctor and bookable services, are created when the hospital approves the names.
+The admin dashboard and AWS deployment. Real push, SMS, and banner image files wait until a provider and storage are chosen. Catalogue rows, including the one consultation doctor and bookable services, are created when the hospital approves the names.
 
 ## Checks
 
-21 Oct 2026: `python manage.py test` — 48 tests passed. `flutter analyze` reported no issues. `flutter test` — 12 tests passed, including linked family members on the request form, a service opened by published id, and a cancellation request from the Bookings tab.
+21 Oct 2026: `python manage.py test` — 53 tests passed. `flutter analyze` reported no issues. `flutter test` — 13 tests passed, including linked family members on the request form, a service opened by published id, a cancellation request from the Bookings tab, and a stored update on the Updates tab. The hospital-system check and in-app updates were covered by the backend suite.

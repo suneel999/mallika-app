@@ -115,6 +115,6 @@ flutter test
 
 ## Next development phase
 
-Patient OTP, session, profiles, family members, catalogue reads, booking requests, and staff review are in place. A request stays pending until staff confirm a time. Next is the separate hospital-system check. Do not add prices or confirm bookings automatically.
+Patient OTP, session, profiles, family members, catalogue reads, booking requests, staff review, the separate hospital-system check, and in-app updates are in place. A request stays pending until staff confirm a time. Updates are stored for the patient and are not sent by push or SMS. Next is the admin dashboard. Do not add prices or confirm bookings automatically.
 
 The original design documents in `docs/` remain the specification.

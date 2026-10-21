@@ -15,6 +15,7 @@ from apps.bookings.services import (
 )
 from apps.catalogue.models import Service
 from apps.catalogue.serializers import ServiceSerializer
+from apps.reconciliation.services import reconciliation_summary
 from config.pagination import DefaultPagination
 
 
@@ -84,17 +85,24 @@ class BookingCancellationView(APIView):
 class StaffBookingListView(APIView):
     def get(self, request):
         _require_staff(request.user)
-        queryset = Booking.objects.select_related("patient_profile", "doctor", "service")
+        queryset = Booking.objects.select_related("patient_profile", "doctor", "service", "hims_reconciliation")
         status = request.query_params.get("status", "").strip()
         if status:
             queryset = queryset.filter(status=status)
         queryset = queryset.order_by("requested_date", "created_at")
         paginator = DefaultPagination()
         page = paginator.paginate_queryset(queryset, request, view=self)
-        return paginator.get_paginated_response(StaffBookingSerializer(page, many=True).data)
+        return paginator.get_paginated_response([_staff_booking_body(booking) for booking in page])
 
 
 class StaffBookingDetailView(APIView):
+    def get(self, request, booking_id):
+        _require_staff(request.user)
+        booking = _staff_booking(booking_id)
+        if booking is None:
+            raise NotFound()
+        return Response(_staff_booking_body(booking))
+
     def patch(self, request, booking_id):
         _require_staff(request.user)
         booking = review_booking(
@@ -105,6 +113,20 @@ class StaffBookingDetailView(APIView):
             request.data.get("staff_note"),
         )
         return Response(StaffBookingSerializer(booking).data)
+
+
+def _staff_booking(booking_id):
+    return (
+        Booking.objects.select_related("patient_profile", "doctor", "service", "hims_reconciliation")
+        .filter(pk=booking_id)
+        .first()
+    )
+
+
+def _staff_booking_body(booking):
+    body = StaffBookingSerializer(booking).data
+    body["hims_reconciliation"] = reconciliation_summary(booking)
+    return body
 
 
 def _require_patient(user):

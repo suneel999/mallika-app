@@ -27,7 +27,7 @@ This file records choices made while scaffolding, and conflicts that are not res
 16. Automated tests use SQLite. The running API uses PostgreSQL. Constraint tests that depend on PostgreSQL-only behavior belong with the schema phase.
 17. Patient colours come from the approved Stitch screens. The crest image is not hotlinked. Address, emergency number, specialist names, and promotional lines stay marked as unconfirmed until the hospital confirms them.
 18. The mobile application id `com.mallikahospitals.mallika_hospitals` is provisional.
-19. Feature packages exist for onboarding, authentication, home, profile, catalogue, and bookings. Notifications are still planned.
+19. Feature packages exist for onboarding, authentication, home, profile, catalogue, bookings, and updates. A booking status change is stored for the patient. Push and SMS are not sent.
 20. Django's built-in admin site is not mounted. Staff use the separate web dashboard.
 
 ## Recommended, not built
@@ -65,13 +65,13 @@ These differences were not silently merged. The lock above is the current rule.
 | Doctor departments and price | Many-to-many departments. Price deferred unless approved | A department on the doctor, plus a fee | Follow the database document when catalogue models are added. Do not add price columns unless the hospital approves them. |
 | Booking concurrency | Idempotency key and append-only events | Version or equivalent locking | Add one locking approach with the booking model. The mechanism is not chosen. |
 | Banner image | `image_url` | Storage key | Store the S3 key and derive a URL when content is implemented. |
-| Notifications | Device token, notification, and attempt tables | One `NotificationDelivery` entity | Follow the three-table database design when notifications are implemented. |
+| Notifications | Device token, notification, and attempt tables | One `NotificationDelivery` entity | Built as the three database tables. A status change is stored for the patient with a title and a short body. Push and SMS are not sent. |
 | Staff identity | Same `accounts_user` row, unique mobile number, `user_kind` | `StaffUser` with a username | The scaffold user is mobile-number based. A separate username is not added unless operations require it. |
 | Session | Access token plus rotating refresh token, or a server session. Includes `POST /auth/token/refresh` | Secure session with refresh and revocation. Refresh endpoint not listed | Built as access token plus rotating refresh token. Logout revokes the session. |
 | Cancellation route | `POST /bookings/{id}/cancellation-requests` | `POST /bookings/{id}/cancellation-request` | Use the database document path when the endpoint is built. |
 | Reconciliation route | `PATCH /admin/bookings/{id}/hims-reconciliation` | `POST /admin/bookings/{id}/reconcile` | Use the database document path when the endpoint is built. |
 | Reconciliation table ownership | Tables named `bookings_himsreconciliation` and `bookings_reconciliationevent` | Separate `reconciliation` module | The Django app is `reconciliation`. Physical table names are chosen with the models. |
-| Banner table name | `contentops_banner` | `content` module | The Django app is `content`. The physical table name is chosen with the model. |
+| Banner table name | `contentops_banner` | `content` module | The Django app is `content` and the table is `contentops_banner`. `image_url` stays empty until file storage exists. |
 
 Where an endpoint exists only in the database document (dashboard metrics, device registration, notification list, catalogue writes, audit search, staff management), that document is the API catalogue to implement later. The architecture document remains the source for module boundaries, patient experience, and the manual HIMS rule.
 
@@ -91,4 +91,4 @@ The patient UI source is the Stitch project `Mallika Hospitals Mobile App` (`pro
 
 ## Next schema phase
 
-Family links, catalogue tables, booking requests, staff review, and patient cancellation requests are in place. Consultation uses the one active doctor and a date and time. A service request uses a published service id. The patient app does not ask for a department or a doctor. HIMS reconciliation is next and stays independent of booking status. Do not add a second model for the same concept. Do not add prices, and do not confirm a booking automatically.
+Family links, catalogue tables, booking requests, staff review, patient cancellation, HIMS reconciliation, and in-app updates are in place. Consultation uses the one active doctor and a date and time. A service request uses a published service id. The patient app does not ask for a department or a doctor. Reconciliation status stays independent of booking status. A status change is stored for the patient and is not sent by push or SMS. The admin dashboard is next. Do not add a second model for the same concept. Do not add prices, and do not confirm a booking automatically.
