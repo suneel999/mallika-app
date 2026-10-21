@@ -1,31 +1,25 @@
-# Administration dashboard
+# Administration desk
 
-The architecture document calls for a responsive web dashboard used by reception and administrators. It calls the same `/api/v1/` API as the patient app. It does not name a frontend framework, so this directory does not contain an application yet.
+Staff use this web client for the booking queue. It calls the same `/api/v1/` API as the patient app. It has no database of its own and no connection to the hospital information system.
 
-## Recommendation
+## Run it locally
 
-Use React with TypeScript, created with Vite.
-
-That choice matches a separate web client of the versioned REST API, can be hosted beside the API on AWS, and is enough for a booking queue, catalogue forms, and banner management at the expected volume.
-
-Confirm this recommendation before generating the project. The next setup step, from the repository root, is:
+From `admin/`, with the API already listening on `http://127.0.0.1:8000`:
 
 ```powershell
-npm create vite@latest admin -- --template react-ts
+npm install
+npm run dev
 ```
 
-Then add routing and an API client aimed at `/api/v1/`. Do not give the dashboard a database connection or direct access to the hospital information system.
+Open `http://localhost:5173`. Sign in with a staff mobile number and password. The API allows that origin when `DJANGO_CORS_ALLOWED_ORIGINS` includes it. Local settings allow `http://localhost:5173` and `http://127.0.0.1:5173` when the variable is empty.
 
-## Responsibilities
+Set `VITE_API_BASE_URL` when the API is not at `http://127.0.0.1:8000/api/v1`.
 
-- Pending booking queue, confirmation, rejection, cancellation, and completion
-- Manual HIMS reconciliation status and external reference entry
-- Departments, doctors, services, and promotional banners
-- Patient search limited to fields staff are allowed to see
-- Staff accounts, permissions, operational reports, and read-only audit search
+## What this desk does
 
-Staff actions require server-side permissions. The dashboard must not decide authorization on its own.
+- Staff sign-in, token refresh, and sign-out
+- The booking queue, including the saved hospital-system check, the total, and the next page
+- Review, confirm a time, reject, complete, mark a missed visit, and decide a cancellation
+- Record the hospital-system check without changing the booking status
 
-## Not in this phase
-
-No package manifest, bundler config, or screens are created until the stack is confirmed. Django's built-in admin is not the operational dashboard.
+Catalogue editing, banner uploads, patient search, reports, and audit search are not in this desk. Those screens wait until the API exposes them.

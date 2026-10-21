@@ -6,7 +6,7 @@ Last updated: 21 October 2026.
 
 ## Now
 
-A patient can sign in, set up a profile, add family members, and request a consultation or a published service. Consultation uses the one published doctor, a date, and a time. The patient does not pick a department or a doctor, and the app takes no payment. Staff can review a request. A hospital-system check is stored separately, and status changes appear in Updates without a push or SMS provider. PostgreSQL is still required for a normal local server. Tests use SQLite.
+A patient can sign in, set up a profile, add family members, and request a consultation or a published service. Consultation uses the one published doctor, a date, and a time. The patient does not pick a department or a doctor, and the app takes no payment. Staff review requests and record a hospital-system check from the desk. Status changes appear in Updates without a push or SMS provider. PostgreSQL is still required for a normal local server. Tests use SQLite.
 
 ## Areas
 
@@ -14,7 +14,7 @@ A patient can sign in, set up a profile, add family members, and request a consu
 | --- | --- | --- |
 | Backend | Sign-in through updates | OTP session, staff password sign-in, family profiles, catalogue, bookings, staff review, HIMS reconciliation, in-app updates, device tokens, and banners. Push and SMS are not sent |
 | Mobile | Sign-in through updates | Splash through profile and family, consultation and published services, bookings, cancellation, and the Updates tab |
-| Admin | Not started | Stack recommendation only, in `admin/README.md` |
+| Admin | Booking desk | Staff sign-in, the booking queue, status review, and the hospital-system check. No catalogue editor, reports, or audit search |
 | Infra | Not started | AWS notes only, in `infra/README.md` |
 | Data | Accounts through updates | User, OTP challenge, refresh session, patient profile, family link, catalogue, booking, cancellation, HIMS reconciliation, device token, notification, notification attempt, and banner. No prices. No image files |
 
@@ -31,6 +31,7 @@ A patient can sign in, set up a profile, add family members, and request a consu
 | 21 Oct 2026 | Staff review | Staff sign in with a password, move a request through review, and confirm a time. A patient can ask to cancel. The agreed time stays until that cancellation is accepted. Confirming a booking does not record a hospital-system check. |
 | 21 Oct 2026 | Hospital-system check | Staff record `not_checked`, `checked_available`, `entered_in_hims`, `mismatch`, or `not_applicable` on a booking and can read that check on the booking. That status stays independent of the booking status. There is no live hospital-system connection. |
 | 21 Oct 2026 | Updates | A booking status change is stored for that patient and shown on the Updates tab. Device tokens can be registered. Banners are listed only while published. No push, SMS, or image file is sent. |
+| 21 Oct 2026 | Staff desk | A web desk for staff sign-in, the booking queue, confirming a time, and recording the hospital-system check. It uses the API only. |
 
 ## Stitch screens
 
@@ -48,8 +49,8 @@ Address, emergency number `108`, specialist names, accreditation lines, and Telu
 
 ## Not built
 
-The admin dashboard and AWS deployment. Real push, SMS, and banner image files wait until a provider and storage are chosen. Catalogue rows, including the one consultation doctor and bookable services, are created when the hospital approves the names.
+Catalogue editing, patient search, reports, audit search, and AWS deployment. Real push, SMS, and banner image files wait until a provider and storage are chosen. Catalogue rows, including the one consultation doctor and bookable services, are created when the hospital approves the names.
 
 ## Checks
 
-21 Oct 2026: `python manage.py test` — 53 tests passed. `flutter analyze` reported no issues. `flutter test` — 13 tests passed, including linked family members on the request form, a service opened by published id, a cancellation request from the Bookings tab, and a stored update on the Updates tab. The hospital-system check and in-app updates were covered by the backend suite.
+21 Oct 2026: `python manage.py test` — 53 tests passed. `flutter analyze` reported no issues. `flutter test` — 13 tests passed, including linked family members on the request form, a service opened by published id, a cancellation request from the Bookings tab, and a stored update on the Updates tab. The hospital-system check and in-app updates were covered by the backend suite. `npm run build` in `admin/` completed. The desk sign-in, queue, and booking screens opened in the browser. The queue shows the total and loads the next page. Keeping a cancellation shows the confirmed-time field when no time was agreed, and leaves that field off when a time is already stored. A live review against PostgreSQL could not be completed because the database was not running.

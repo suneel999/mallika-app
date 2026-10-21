@@ -1,0 +1,192 @@
+:root {
+  color: #181c1f;
+  background: #f7fafe;
+  font-family: "Segoe UI", sans-serif;
+  line-height: 1.4;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+a {
+  color: inherit;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 24px;
+  background: #071d49;
+  color: white;
+}
+
+.topbar h1,
+.panel h2,
+.card h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.topbar p {
+  margin: 4px 0 0;
+  color: #d6e3ff;
+}
+
+.muted {
+  color: #42474e;
+}
+
+.page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+.card,
+.panel {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.card {
+  max-width: 420px;
+  margin: 48px auto;
+}
+
+.stack {
+  display: grid;
+  gap: 12px;
+}
+
+label {
+  display: grid;
+  gap: 6px;
+  font-weight: 600;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #c5c6cf;
+  border-radius: 10px;
+  background: white;
+}
+
+textarea {
+  min-height: 88px;
+  resize: vertical;
+}
+
+button,
+.button-link {
+  border: 0;
+  border-radius: 10px;
+  padding: 10px 14px;
+  background: #002743;
+  color: white;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+button.secondary,
+.button-link.secondary {
+  background: white;
+  color: #002743;
+  border: 1px solid #002743;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.toolbar,
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: end;
+}
+
+.toolbar label {
+  min-width: 180px;
+}
+
+.error {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #ffdad6;
+  color: #690005;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  background: white;
+  border-radius: 16px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 12px 14px;
+  text-align: left;
+  border-bottom: 1px solid #e6e8ee;
+  white-space: nowrap;
+}
+
+th {
+  color: #42474e;
+  font-size: 0.85rem;
+}
+
+tr.clickable {
+  cursor: pointer;
+}
+
+tr.clickable:hover {
+  background: #f7fafe;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.panel p {
+  color: #181c1f;
+}
+
+.panel .muted {
+  color: #42474e;
+}
+
+@media (max-width: 720px) {
+  .topbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

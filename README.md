@@ -11,7 +11,7 @@ The system is a modular monolith sized for fewer than 100 bookings a day.
 | Patient app | Flutter, Android and iOS |
 | API | Python, Django, Django REST Framework |
 | Database | PostgreSQL |
-| Administration | Responsive web client of the same API. React, TypeScript, and Vite are recommended and not yet created. See `admin/README.md`. |
+| Administration | React, TypeScript, and Vite desk for the booking queue and the hospital-system check. See `admin/README.md`. |
 | Files | Amazon S3 for promotional banners and other approved assets |
 | Notifications | SMS and push through provider interfaces |
 | Hosting | AWS-ready later. Nothing is deployed in this phase. |
@@ -23,7 +23,7 @@ PostgreSQL is the source of truth for app accounts, profiles, booking requests, 
 ```
 backend/     Django project and domain applications
 mobile/      Flutter patient application
-admin/       Administration frontend notes (no app yet)
+admin/       Staff desk for the booking queue
 docs/        Design documents and project decisions
 infra/       Deployment notes (no cloud configuration yet)
 ```
@@ -94,6 +94,18 @@ flutter run --dart-define=API_BASE_URL=http://127.0.0.1:8000/api/v1
 
 The application id `com.mallikahospitals.mallika_hospitals` is provisional. Home colours come from the Stitch screen.
 
+## Staff desk
+
+The desk is a React app in `admin/`. It needs Node.js and a running API. See `admin/README.md`.
+
+```powershell
+cd admin
+npm install
+npm run dev
+```
+
+Open `http://localhost:5173` and sign in with a staff mobile number and password.
+
 ## Tests
 
 ```powershell
@@ -115,6 +127,6 @@ flutter test
 
 ## Next development phase
 
-Patient OTP, session, profiles, family members, catalogue reads, booking requests, staff review, the separate hospital-system check, and in-app updates are in place. A request stays pending until staff confirm a time. Updates are stored for the patient and are not sent by push or SMS. Next is the admin dashboard. Do not add prices or confirm bookings automatically.
+Patient OTP, session, profiles, family members, catalogue reads, booking requests, staff review, the separate hospital-system check, in-app updates, and the staff desk are in place. A request stays pending until staff confirm a time. Updates are stored for the patient and are not sent by push or SMS. Catalogue editing, reports, and audit search are later. Do not add prices or confirm bookings automatically.
 
 The original design documents in `docs/` remain the specification.
