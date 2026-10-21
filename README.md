@@ -30,7 +30,7 @@ infra/       Deployment notes (no cloud configuration yet)
 
 Backend domains: `accounts`, `patients`, `catalogue`, `bookings`, `reconciliation`, `content`, `notifications`, `reports`, and `audit`.
 
-The mobile library currently contains `app/`, `core/`, and `features/home/`. Further feature packages are added with the screens they belong to.
+The mobile library contains `app/`, `core/`, and `features/` for onboarding, authentication, home, and profile.
 
 ## Prerequisites
 
@@ -76,7 +76,9 @@ Local settings load `backend/.env`. If `DJANGO_SECRET_KEY` is omitted there, loc
 
 ## Flutter
 
-The app opens on the Stitch home screen "Home (Enhanced Blue Header)". It shows the blue hospital header, the cardiac care banner, the emergency call action, medical service cards, the specialist row, directions, and the bottom navigation. Bookings, updates, and profile are still the next screens. Progress is tracked in `docs/STATUS.md`.
+The app opens on the Stitch splash, then welcome, mobile number, and OTP. After the code is verified, a new patient sets up their own profile and reaches the home screen. A returning patient with a profile goes straight home. Home is still "Home (Enhanced Blue Header)". Bookings and updates are still the next screens. The profile tab shows the signed-in patient and can log out. Progress is tracked in `docs/STATUS.md`.
+
+Local OTP delivery prints the code to the API process stderr. That sender is refused by production settings. Do not run it on a shared machine.
 
 ```powershell
 cd mobile
@@ -113,6 +115,6 @@ flutter test
 
 ## Next development phase
 
-Agree the open items in `docs/PROJECT_DECISIONS.md`, then implement the first vertical slice from the architecture build sequence: patient OTP/session, patient and family profiles, catalogue read APIs, and authorization tests. Booking creation comes after that slice is tested.
+Patient OTP, session, and the patient's own profile are in place. Next is family profiles, then the service catalogue, then a booking request that staff review by hand. Do not add prices or confirm bookings automatically.
 
 The original design documents in `docs/` remain the specification.

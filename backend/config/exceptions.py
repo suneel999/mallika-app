@@ -3,12 +3,19 @@
 import logging
 
 from django.http import JsonResponse
+from rest_framework.exceptions import APIException
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
 
 from config.logging_utils import redact_text
 
 logger = logging.getLogger(__name__)
+
+
+class Conflict(APIException):
+    status_code = 409
+    default_detail = "The request conflicts with the current state."
+    default_code = "conflict"
 
 STATUS_CODES = {
     400: "VALIDATION_ERROR",
@@ -87,7 +94,10 @@ def api_exception_handler(exc, context):
     if http_status == 429:
         header = response.headers.get("Retry-After")
         if header is not None:
-            retry_after = header
+            try:
+                retry_after = int(header)
+            except (TypeError, ValueError):
+                retry_after = header
 
     response.data = error_payload(
         code,

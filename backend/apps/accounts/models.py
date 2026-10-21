@@ -88,3 +88,63 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return str(self.id)
+
+
+class OtpPurpose(models.TextChoices):
+    LOGIN = "login", "Login"
+
+
+class OtpChallenge(models.Model):
+    """One SMS code challenge. Only the hash is stored."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    mobile_number = models.CharField(max_length=20)
+    purpose = models.CharField(max_length=16, choices=OtpPurpose.choices)
+    code_hash = models.CharField(max_length=128)
+    expires_at = models.DateTimeField()
+    attempts = models.PositiveSmallIntegerField(default=0)
+    consumed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "accounts_otpchallenge"
+        indexes = [
+            models.Index(fields=["mobile_number", "created_at"], name="accounts_otp_mobile_created"),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(purpose__in=[OtpPurpose.LOGIN]),
+                name="accounts_otp_purpose_valid",
+            ),
+        ]
+
+    def __str__(self):
+        return str(self.id)
+
+
+class RefreshSession(models.Model):
+    """Rotating refresh token. The raw token is never stored."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="refresh_sessions",
+    )
+    token_hash = models.CharField(max_length=64, unique=True)
+    expires_at = models.DateTimeField()
+    revoked_at = models.DateTimeField(null=True, blank=True)
+    replaced_by = models.ForeignKey(
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="replaces",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "accounts_refreshsession"
+
+    def __str__(self):
+        return str(self.id)

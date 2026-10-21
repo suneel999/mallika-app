@@ -6,42 +6,44 @@ Last updated: 19 October 2026.
 
 ## Now
 
-The API scaffold and the patient home screen exist. Patients cannot log in or submit a booking yet. PostgreSQL was not running in the local environment, so the API has been started with test settings when a live server was needed.
+A patient can request an OTP, verify it, set up their own profile, and open the home screen. Family profiles, the service catalogue, and booking requests are not built. PostgreSQL is still required for a normal local server. Tests use SQLite.
 
 ## Areas
 
 | Area | State | What exists |
 | --- | --- | --- |
-| Backend | Scaffold | Django REST project, `/api/v1/health/`, error envelope, custom `accounts_user`, empty domain apps |
-| Mobile | Home only | Flutter app. Home matches the Stitch screen "Home (Enhanced Blue Header)" |
+| Backend | Sign-in and own profile | `/api/v1/health/`, OTP request and verify, refresh, logout, `/me/`, and the signed-in patient's profile |
+| Mobile | Sign-in through home | Splash, welcome, mobile number, OTP, profile setup, home, and a profile page with logout |
 | Admin | Not started | Stack recommendation only, in `admin/README.md` |
 | Infra | Not started | AWS notes only, in `infra/README.md` |
-| Data | User table only | Other tables wait on the open decisions in `docs/PROJECT_DECISIONS.md` |
+| Data | Accounts and own profile | User, OTP challenge, refresh session, patient profile. No family, catalogue, or booking tables |
 
 ## Big features
 
 | Date | Feature | Notes |
 | --- | --- | --- |
 | 18 Oct 2026 | Phase 1 scaffold | Backend, Flutter shell, docs, admin and infra placeholders. 17 backend tests passing at that time. |
-| 19 Oct 2026 | Patient home UI | Stitch project `Mallika Hospitals Mobile App` (`projects/7623074882172969862`). Screen: Home (Enhanced Blue Header). Flutter analyze clean; home widget test passing. |
+| 19 Oct 2026 | Patient home UI | Stitch project `Mallika Hospitals Mobile App` (`projects/7623074882172969862`). Screen: Home (Enhanced Blue Header). |
+| 19 Oct 2026 | Patient sign-in and profile | OTP session, the patient's own profile, and the Stitch splash, welcome, login, OTP, and profile screens. |
 
 ## Stitch screens
 
 | Screen | In the app |
 | --- | --- |
+| Splash | Yes. Shown while the app checks for a saved session. |
+| Welcome & About | Yes. |
+| Mobile Number Login | Yes. |
+| OTP Verification | Yes. The phone keyboard is used instead of the drawn keypad. |
+| Profile Setup | Yes. Creates the signed-in patient's own profile. |
 | Home (Enhanced Blue Header) | Yes. This is the current home. |
 | Home, Home (Enlarged Cards & Text) | Earlier variants. Not used. |
-| Splash, Welcome & About, Mobile Number Login, OTP Verification, Profile Setup | Designed. Not built. |
 
-Address, emergency number `108`, specialist names, and Telugu lines on the home screen are copied from that Stitch design. Hospital operations still need to confirm them.
+Address, emergency number `108`, specialist names, accreditation lines, and Telugu marketing lines are copied from those Stitch designs. Hospital operations still need to confirm them.
 
 ## Not built
 
-OTP login, patient and family profiles, catalogue APIs, bookings, HIMS reconciliation, notifications, the admin dashboard, and AWS deployment.
+Family profiles, catalogue APIs, bookings, HIMS reconciliation, notifications, the admin dashboard, and AWS deployment.
 
-## Checks last recorded
+## Checks
 
-- `python manage.py test`: 17 passed (18 Oct 2026, scaffold).
-- `flutter analyze` and `flutter test`: passed after the home screen (19 Oct 2026).
-
-Re-record a check here only when a big feature runs it.
+Backend tests cover health, the error envelope, OTP limits, session rotation, and the patient's own profile. Flutter tests cover the home screen, the path from welcome to the mobile-number check, and profile name validation.

@@ -5,7 +5,9 @@ import '../../app/theme.dart';
 import 'home_content.dart';
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({super.key, this.onOpenProfile});
+
+  final VoidCallback? onOpenProfile;
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +38,7 @@ class HomeScreen extends StatelessWidget {
           ),
         ],
       ),
-      bottomNavigationBar: const _HomeBottomNav(),
+      bottomNavigationBar: _HomeBottomNav(onOpenProfile: onOpenProfile),
     );
   }
 }
@@ -606,7 +608,9 @@ class _TrustBanner extends StatelessWidget {
 }
 
 class _HomeBottomNav extends StatelessWidget {
-  const _HomeBottomNav();
+  const _HomeBottomNav({this.onOpenProfile});
+
+  final VoidCallback? onOpenProfile;
 
   @override
   Widget build(BuildContext context) {
@@ -615,6 +619,10 @@ class _HomeBottomNav extends StatelessWidget {
       backgroundColor: MallikaColors.surface,
       indicatorColor: MallikaColors.secondaryFixed,
       onDestinationSelected: (index) {
+        if (index == 3 && onOpenProfile != null) {
+          onOpenProfile!();
+          return;
+        }
         if (index != 0) {
           _soon(context);
         }

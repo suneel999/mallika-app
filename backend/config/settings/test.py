@@ -18,3 +18,4 @@ DATABASES = {
 PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.MD5PasswordHasher",
 ]
+OTP_SENDER = "apps.accounts.senders.CapturingOtpSender"
