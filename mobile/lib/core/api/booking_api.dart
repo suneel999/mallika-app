@@ -18,6 +18,7 @@ class BookingSummary {
     this.serviceName,
     this.patientNote,
     this.preferredTimeSlot,
+    this.confirmedFor,
   });
 
   final String id;
@@ -29,6 +30,7 @@ class BookingSummary {
   final String? serviceName;
   final String? patientNote;
   final String? preferredTimeSlot;
+  final String? confirmedFor;
 
   String get targetName => serviceName ?? doctorName ?? 'Consultation';
 
@@ -43,6 +45,7 @@ class BookingSummary {
       serviceName: json['service_name'] as String?,
       patientNote: json['patient_note'] as String?,
       preferredTimeSlot: json['preferred_time_slot'] as String?,
+      confirmedFor: json['confirmed_for'] as String?,
     );
   }
 }
@@ -151,6 +154,16 @@ class BookingApi {
         'preferred_time_slot': timeSlot,
         if (note != null && note.isNotEmpty) 'patient_note': note,
       },
+    );
+    return BookingSummary.fromJson(body);
+  }
+
+  Future<BookingSummary> requestCancellation(String access, String bookingId, {String? reason}) async {
+    final body = await _send(
+      'POST',
+      '/bookings/$bookingId/cancellation-requests/',
+      access: access,
+      json: {if (reason != null && reason.isNotEmpty) 'reason': reason},
     );
     return BookingSummary.fromJson(body);
   }

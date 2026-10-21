@@ -2,9 +2,20 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from django.db import IntegrityError, transaction
-from rest_framework.exceptions import NotFound, ValidationError
+from django.utils import timezone
+from django.utils.dateparse import parse_datetime
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 
-from apps.bookings.models import Booking, BookingEvent, BookingNumberCounter, BookingStatus, BookingType
+from apps.accounts.models import UserKind
+from apps.bookings.models import (
+    Booking,
+    BookingEvent,
+    BookingNumberCounter,
+    BookingStatus,
+    BookingType,
+    CancellationRequest,
+    CancellationRequestStatus,
+)
 from apps.catalogue.models import Doctor, Service
 from apps.patients.services import accessible_profile
 from config.exceptions import Conflict
@@ -109,6 +120,130 @@ def request_booking(user, data: dict, idempotency_key: str) -> tuple[Booking, bo
             return existing, False
         raise Conflict("This Idempotency-Key was already used for a different booking request.") from exc
     return booking, True
+
+
+_STAFF_TRANSITIONS = {
+    BookingStatus.REQUESTED: {BookingStatus.UNDER_REVIEW, BookingStatus.REJECTED},
+    BookingStatus.UNDER_REVIEW: {BookingStatus.CONFIRMED, BookingStatus.REJECTED},
+    BookingStatus.CONFIRMED: {BookingStatus.COMPLETED, BookingStatus.NO_SHOW, BookingStatus.CANCELLED},
+    BookingStatus.CANCELLATION_REQUESTED: {BookingStatus.CANCELLED, BookingStatus.CONFIRMED},
+}
+
+_CANCELLABLE = {BookingStatus.REQUESTED, BookingStatus.UNDER_REVIEW, BookingStatus.CONFIRMED}
+
+
+def request_cancellation(user, booking_id, reason) -> Booking:
+    note = (reason or "").strip() or None
+    try:
+        with transaction.atomic():
+            booking = (
+                Booking.objects.select_for_update()
+                .select_related("patient_profile", "doctor", "service")
+                .filter(pk=booking_id, requested_by=user)
+                .first()
+            )
+            if booking is None:
+                raise NotFound()
+            if booking.status not in _CANCELLABLE:
+                raise Conflict("This request can no longer be cancelled.")
+            if booking.cancellation_requests.filter(status=CancellationRequestStatus.OPEN).exists():
+                raise Conflict("A cancellation request is already open.")
+            from_status = booking.status
+            CancellationRequest.objects.create(
+                booking=booking,
+                requested_by=user,
+                reason=note,
+                status=CancellationRequestStatus.OPEN,
+            )
+            booking.status = BookingStatus.CANCELLATION_REQUESTED
+            booking.save(update_fields=["status", "updated_at"])
+            BookingEvent.objects.create(
+                booking=booking,
+                from_status=from_status,
+                to_status=BookingStatus.CANCELLATION_REQUESTED,
+                actor=user,
+                note=note,
+                metadata={},
+            )
+    except IntegrityError as exc:
+        raise Conflict("A cancellation request is already open.") from exc
+    return booking
+
+
+def review_booking(actor, booking_id, status, confirmed_for_raw, staff_note) -> Booking:
+    if actor.user_kind not in (UserKind.STAFF, UserKind.ADMIN) or not actor.is_active:
+        raise PermissionDenied()
+    note = (staff_note or "").strip() or None
+    with transaction.atomic():
+        booking = (
+            Booking.objects.select_for_update()
+            .select_related("patient_profile", "doctor", "service")
+            .filter(pk=booking_id)
+            .first()
+        )
+        if booking is None:
+            raise NotFound()
+        if status not in _STAFF_TRANSITIONS.get(booking.status, set()):
+            raise Conflict("That status change is not available.")
+        from_status = booking.status
+        booking.status = status
+        _apply_confirmation(booking, status, confirmed_for_raw, actor)
+        if note is not None:
+            booking.staff_note = note
+        if status == BookingStatus.CANCELLED:
+            booking.cancelled_at = timezone.now()
+        booking.save()
+        open_request = (
+            booking.cancellation_requests.filter(status=CancellationRequestStatus.OPEN)
+            .order_by("-created_at")
+            .first()
+        )
+        if from_status == BookingStatus.CANCELLATION_REQUESTED and open_request is not None:
+            open_request.status = (
+                CancellationRequestStatus.ACCEPTED
+                if status == BookingStatus.CANCELLED
+                else CancellationRequestStatus.DECLINED
+            )
+            open_request.reviewed_by = actor
+            open_request.reviewed_at = timezone.now()
+            open_request.save(update_fields=["status", "reviewed_by", "reviewed_at"])
+        BookingEvent.objects.create(
+            booking=booking,
+            from_status=from_status,
+            to_status=status,
+            actor=actor,
+            note=note,
+            metadata={},
+        )
+    return booking
+
+
+def _apply_confirmation(booking, status, confirmed_for_raw, actor) -> None:
+    keeps_agreed_time = {
+        BookingStatus.COMPLETED,
+        BookingStatus.NO_SHOW,
+        BookingStatus.CANCELLATION_REQUESTED,
+    }
+    if status == BookingStatus.CONFIRMED:
+        if isinstance(confirmed_for_raw, str) and confirmed_for_raw.strip():
+            booking.confirmed_for = _parse_confirmed_for(confirmed_for_raw)
+            booking.confirmed_by = actor
+        elif booking.confirmed_for is None or booking.confirmed_by_id is None:
+            raise ValidationError({"confirmed_for": "Choose the confirmed date and time."})
+        return
+    if status in keeps_agreed_time:
+        return
+    booking.confirmed_for = None
+    booking.confirmed_by = None
+
+
+def _parse_confirmed_for(raw):
+    if not isinstance(raw, str) or not raw.strip():
+        raise ValidationError({"confirmed_for": "Choose the confirmed date and time."})
+    parsed = parse_datetime(raw.strip())
+    if parsed is None or timezone.is_naive(parsed):
+        raise ValidationError({"confirmed_for": "Send a date and time with a time zone."})
+    return parsed
 
 
 def _parse_date(raw):

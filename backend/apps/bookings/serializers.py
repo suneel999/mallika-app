@@ -27,6 +27,7 @@ class BookingSerializer(serializers.ModelSerializer):
             "preferred_time_slot",
             "patient_note",
             "status",
+            "confirmed_for",
             "created_at",
         ]
 
@@ -35,3 +36,8 @@ class BookingSerializer(serializers.ModelSerializer):
 
     def get_service_name(self, booking):
         return booking.service.name if booking.service_id else None
+
+
+class StaffBookingSerializer(BookingSerializer):
+    class Meta(BookingSerializer.Meta):
+        fields = BookingSerializer.Meta.fields + ["staff_note"]

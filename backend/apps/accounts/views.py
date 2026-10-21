@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.models import UserKind
-from apps.accounts.services import logout_session, refresh_session, request_otp, verify_otp
+from apps.accounts.services import logout_session, refresh_session, request_otp, staff_login, verify_otp
 from apps.patients.models import PatientProfile
 from apps.patients.serializers import serialize_profile
 
@@ -30,6 +30,14 @@ class TokenRefreshView(APIView):
         issued = refresh_session(request.data.get("refresh"))
         user = _user_from_access(issued["access"])
         return Response(_session_body(user, issued))
+
+
+class StaffLoginView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        issued = staff_login(request.data.get("mobile_number"), request.data.get("password"))
+        return Response(_session_body(_user_from_access(issued["access"]), issued))
 
 
 class LogoutView(APIView):

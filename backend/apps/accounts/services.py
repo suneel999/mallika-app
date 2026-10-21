@@ -152,6 +152,24 @@ def logout_session(raw_token: str) -> None:
         raise AuthenticationFailed("Authentication is required.")
 
 
+def staff_login(raw_mobile, raw_password) -> dict:
+    invalid = AuthenticationFailed("The mobile number or password is not valid.")
+    try:
+        mobile = normalize_indian_mobile(raw_mobile)
+    except ValueError as exc:
+        raise ValidationError({"mobile_number": str(exc)}) from exc
+    user = User.objects.filter(mobile_number=mobile).first()
+    password = "" if raw_password is None else str(raw_password)
+    if (
+        user is None
+        or user.user_kind == UserKind.PATIENT
+        or not user.is_active
+        or not user.check_password(password)
+    ):
+        raise invalid
+    return _tokens_for(user)
+
+
 def _tokens_for(user: User) -> dict:
     raw = secrets.token_urlsafe(32)
     session = RefreshSession.objects.create(

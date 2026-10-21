@@ -158,6 +158,10 @@ class SessionController extends ChangeNotifier {
     return _authed(bookings.options);
   }
 
+  Future<BookingSummary> requestCancellation(String bookingId, {String? reason}) {
+    return _authed((access) => bookings.requestCancellation(access, bookingId, reason: reason));
+  }
+
   Future<List<BookingSummary>> loadBookings() {
     return _authed(bookings.list);
   }

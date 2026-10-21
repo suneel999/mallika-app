@@ -100,13 +100,33 @@ class Booking(models.Model):
             models.CheckConstraint(
                 condition=(
                     models.Q(
-                        status=BookingStatus.CONFIRMED,
+                        status__in=[
+                            BookingStatus.CONFIRMED,
+                            BookingStatus.COMPLETED,
+                            BookingStatus.NO_SHOW,
+                        ],
                         confirmed_for__isnull=False,
                         confirmed_by__isnull=False,
                     )
                     | models.Q(
-                        ~models.Q(status=BookingStatus.CONFIRMED),
+                        status=BookingStatus.CANCELLATION_REQUESTED,
+                        confirmed_for__isnull=False,
+                        confirmed_by__isnull=False,
+                    )
+                    | models.Q(
+                        status=BookingStatus.CANCELLATION_REQUESTED,
                         confirmed_for__isnull=True,
+                        confirmed_by__isnull=True,
+                    )
+                    | models.Q(
+                        status__in=[
+                            BookingStatus.REQUESTED,
+                            BookingStatus.UNDER_REVIEW,
+                            BookingStatus.REJECTED,
+                            BookingStatus.CANCELLED,
+                        ],
+                        confirmed_for__isnull=True,
+                        confirmed_by__isnull=True,
                     )
                 ),
                 name="bookings_booking_confirmation_valid",
@@ -115,6 +135,47 @@ class Booking(models.Model):
         indexes = [
             models.Index(fields=["status", "requested_date"], name="bookings_status_date_idx"),
             models.Index(fields=["requested_by", "-created_at"], name="bookings_requester_created_idx"),
+        ]
+
+
+class CancellationRequestStatus(models.TextChoices):
+    OPEN = "open", "Open"
+    ACCEPTED = "accepted", "Accepted"
+    DECLINED = "declined", "Declined"
+
+
+class CancellationRequest(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    booking = models.ForeignKey(Booking, on_delete=models.CASCADE, related_name="cancellation_requests")
+    requested_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="cancellation_requests",
+    )
+    reason = models.TextField(null=True, blank=True)
+    status = models.CharField(
+        max_length=20,
+        choices=CancellationRequestStatus.choices,
+        default=CancellationRequestStatus.OPEN,
+    )
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="reviewed_cancellations",
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "bookings_cancellationrequest"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["booking"],
+                condition=models.Q(status=CancellationRequestStatus.OPEN),
+                name="bookings_one_open_cancellation",
+            ),
         ]
 
 

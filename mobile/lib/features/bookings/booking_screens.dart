@@ -45,6 +45,44 @@ class _BookingListScreenState extends State<BookingListScreen> {
     }
   }
 
+  bool _canCancel(String status) {
+    return status == 'requested' || status == 'under_review' || status == 'confirmed';
+  }
+
+  Future<void> _cancel(BookingSummary booking) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Request cancellation'),
+        content: Text('Ask the hospital to cancel ${booking.reference}?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Keep')),
+          TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Request cancellation')),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) {
+      return;
+    }
+    try {
+      final updated = await widget.session.requestCancellation(booking.id);
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _bookings = [
+          for (final item in _bookings)
+            if (item.id == updated.id) updated else item,
+        ];
+      });
+    } on ApiException catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() => _error = error.displayMessage);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -98,6 +136,15 @@ class _BookingListScreenState extends State<BookingListScreen> {
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
+                              if ((booking.confirmedFor ?? '').isNotEmpty) ...[
+                                const SizedBox(height: 4),
+                                Text('Confirmed for ${booking.confirmedFor}'),
+                              ],
+                              if (_canCancel(booking.status))
+                                TextButton(
+                                  onPressed: () => _cancel(booking),
+                                  child: const Text('Request cancellation'),
+                                ),
                             ],
                           ),
                         );

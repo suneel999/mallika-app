@@ -3,8 +3,16 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.models import UserKind
-from apps.bookings.serializers import BookingSerializer
-from apps.bookings.services import PREFERRED_TIME_SLOTS, consultation_doctor, request_booking, visible_bookings
+from apps.bookings.models import Booking
+from apps.bookings.serializers import BookingSerializer, StaffBookingSerializer
+from apps.bookings.services import (
+    PREFERRED_TIME_SLOTS,
+    consultation_doctor,
+    request_booking,
+    request_cancellation,
+    review_booking,
+    visible_bookings,
+)
 from apps.catalogue.models import Service
 from apps.catalogue.serializers import ServiceSerializer
 from config.pagination import DefaultPagination
@@ -66,6 +74,44 @@ class BookingDetailView(APIView):
         return Response(BookingSerializer(booking).data)
 
 
+class BookingCancellationView(APIView):
+    def post(self, request, booking_id):
+        _require_patient(request.user)
+        booking = request_cancellation(request.user, booking_id, request.data.get("reason"))
+        return Response(BookingSerializer(booking).data, status=201)
+
+
+class StaffBookingListView(APIView):
+    def get(self, request):
+        _require_staff(request.user)
+        queryset = Booking.objects.select_related("patient_profile", "doctor", "service")
+        status = request.query_params.get("status", "").strip()
+        if status:
+            queryset = queryset.filter(status=status)
+        queryset = queryset.order_by("requested_date", "created_at")
+        paginator = DefaultPagination()
+        page = paginator.paginate_queryset(queryset, request, view=self)
+        return paginator.get_paginated_response(StaffBookingSerializer(page, many=True).data)
+
+
+class StaffBookingDetailView(APIView):
+    def patch(self, request, booking_id):
+        _require_staff(request.user)
+        booking = review_booking(
+            request.user,
+            booking_id,
+            str(request.data.get("status") or "").strip(),
+            request.data.get("confirmed_for"),
+            request.data.get("staff_note"),
+        )
+        return Response(StaffBookingSerializer(booking).data)
+
+
 def _require_patient(user):
     if user.user_kind != UserKind.PATIENT:
+        raise PermissionDenied()
+
+
+def _require_staff(user):
+    if user.user_kind not in (UserKind.STAFF, UserKind.ADMIN) or not user.is_active:
         raise PermissionDenied()

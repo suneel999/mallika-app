@@ -74,7 +74,7 @@ void main() {
   });
 
   testWidgets('bookings tab shows a pending request', (tester) async {
-    final session = SessionController.preview(Gate.ready, bookings: _PendingBookings());
+    final session = SessionController.preview(Gate.ready, bookings: _CancellableBookings());
     await session.tokens.write(TokenStore.accessKey, 'preview-access');
     await _open(tester, MallikaApp(session: session));
 
@@ -83,6 +83,12 @@ void main() {
 
     expect(find.text('MAL-BK-000001'), findsOneWidget);
     expect(find.text('Pending'), findsOneWidget);
+
+    await tester.tap(find.text('Request cancellation'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Request cancellation').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Cancellation requested'), findsOneWidget);
   });
 
   testWidgets('welcome leads to mobile number entry', (tester) async {
@@ -232,7 +238,7 @@ class _ConsultationOptions extends BookingApi {
   }
 }
 
-class _PendingBookings extends BookingApi {
+class _CancellableBookings extends BookingApi {
   @override
   Future<BookingOptions> options(String access) async {
     return const BookingOptions(timeSlots: ['10:00']);
@@ -250,6 +256,18 @@ class _PendingBookings extends BookingApi {
         serviceName: 'Heart checkup',
       ),
     ];
+  }
+
+  @override
+  Future<BookingSummary> requestCancellation(String access, String bookingId, {String? reason}) async {
+    return const BookingSummary(
+      id: 'booking',
+      reference: 'MAL-BK-000001',
+      patientName: 'Preview Patient',
+      status: 'cancellation_requested',
+      requestedDate: '2026-10-22',
+      serviceName: 'Heart checkup',
+    );
   }
 }
 

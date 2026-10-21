@@ -91,4 +91,4 @@ The patient UI source is the Stitch project `Mallika Hospitals Mobile App` (`pro
 
 ## Next schema phase
 
-Family links, catalogue tables, and booking requests are in place. Consultation uses the one active doctor and a date and time. A service request uses that service, a date, and a time. The patient app does not ask for a department or a doctor. Staff review, cancellation, and HIMS reconciliation are next. Do not add a second model for the same concept. Keep booking status and HIMS reconciliation status independent. Do not add prices, and do not confirm a booking automatically.
+Family links, catalogue tables, booking requests, staff review, and patient cancellation requests are in place. Consultation uses the one active doctor and a date and time. A service request uses a published service id. The patient app does not ask for a department or a doctor. HIMS reconciliation is next and stays independent of booking status. Do not add a second model for the same concept. Do not add prices, and do not confirm a booking automatically.
