@@ -42,7 +42,7 @@ On 19 October 2026 the database and API document became the rule where the two d
 
 - Booking status uses the database list. The app may label `requested` as Pending.
 - Reconciliation status uses `not_checked`, `checked_available`, `entered_in_hims`, `mismatch`, and `not_applicable`. It stays independent of booking status.
-- Family members are linked patient profiles. The API is `/me/patient-profiles`. The first profile is the signed-in patient. A second profile is not accepted until family links exist.
+- Family members are linked patient profiles. The API is `/me/patient-profiles`. The first profile is the signed-in patient, with relationship `self`. Later profiles are new family records linked to that account. A caller cannot attach an existing profile by id.
 - Catalogue prices stay out until the hospital approves them.
 - Sessions are a short-lived access token plus a rotating refresh token. Logout revokes that refresh session, and the access token stops working with it.
 - OTP codes are hashed, expire quickly, and stop after a small number of attempts. The local API prints a code to its own stderr as the SMS stand-in. Production refuses that sender.
@@ -88,4 +88,4 @@ The patient UI source is the Stitch project `Mallika Hospitals Mobile App` (`pro
 
 ## Next schema phase
 
-Family links, the service catalogue, and booking requests are next. Do not add a second model for the same concept. Keep booking status and HIMS reconciliation status independent. Do not add prices, and do not confirm a booking automatically.
+Family links are in place. The service catalogue and booking requests are next. Do not add a second model for the same concept. Keep booking status and HIMS reconciliation status independent. Do not add prices, and do not confirm a booking automatically.

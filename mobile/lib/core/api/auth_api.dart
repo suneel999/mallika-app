@@ -47,6 +47,8 @@ class PatientProfile {
     required this.sex,
     required this.mobileNumber,
     required this.preferredLanguage,
+    this.relationship = 'self',
+    this.isDefault = false,
   });
 
   final String id;
@@ -56,6 +58,8 @@ class PatientProfile {
   final String? sex;
   final String mobileNumber;
   final String preferredLanguage;
+  final String relationship;
+  final bool isDefault;
 
   factory PatientProfile.fromJson(Map<String, dynamic> json) {
     return PatientProfile(
@@ -66,6 +70,8 @@ class PatientProfile {
       sex: json['sex'] as String?,
       mobileNumber: json['mobile_number'] as String,
       preferredLanguage: json['preferred_language'] as String? ?? 'en',
+      relationship: json['relationship'] as String? ?? 'self',
+      isDefault: json['is_default'] as bool? ?? false,
     );
   }
 }
@@ -161,6 +167,61 @@ class AuthApi {
     return PatientProfile.fromJson(body);
   }
 
+  Future<List<PatientProfile>> listProfiles(String access) async {
+    final body = await _send('GET', '/me/patient-profiles/', access: access);
+    final results = body['results'];
+    if (results is! List) {
+      return const [];
+    }
+    return [
+      for (final item in results)
+        if (item is Map) PatientProfile.fromJson(_map(item)),
+    ];
+  }
+
+  Future<PatientProfile> createFamilyProfile({
+    required String access,
+    required String fullName,
+    required String relationship,
+    String? mobileNumber,
+    required String preferredLanguage,
+  }) async {
+    final payload = <String, dynamic>{
+      'full_name': fullName,
+      'relationship': relationship,
+      'preferred_language': preferredLanguage,
+    };
+    if (mobileNumber != null && mobileNumber.isNotEmpty) {
+      payload['mobile_number'] = mobileNumber;
+    }
+    final body = await _send('POST', '/me/patient-profiles/', access: access, json: payload);
+    return PatientProfile.fromJson(body);
+  }
+
+  Future<PatientProfile> updateFamilyProfile({
+    required String access,
+    required String profileId,
+    required String fullName,
+    required String relationship,
+    String? mobileNumber,
+  }) async {
+    final body = await _send(
+      'PATCH',
+      '/me/patient-profiles/$profileId/',
+      access: access,
+      json: {
+        'full_name': fullName,
+        'relationship': relationship,
+        'mobile_number': mobileNumber ?? '',
+      },
+    );
+    return PatientProfile.fromJson(body);
+  }
+
+  Future<void> deleteFamilyProfile(String access, String profileId) async {
+    await _send('DELETE', '/me/patient-profiles/$profileId/', access: access, allowEmpty: true);
+  }
+
   VerifiedSession _session(Map<String, dynamic> body) {
     final user = _map(body['user']);
     final profile = user['profile'];
@@ -242,10 +303,25 @@ class AuthApi {
         statusCode: statusCode,
         code: map['code']?.toString() ?? 'REQUEST_ERROR',
         message: map['message']?.toString() ?? 'The request could not be completed.',
+        fields: _fields(map['fields']),
         retryAfter: retry is num ? retry.toInt() : null,
       );
     }
     return body;
+  }
+
+  static Map<String, String> _fields(Object? value) {
+    if (value is! Map) {
+      return const {};
+    }
+    final fields = <String, String>{};
+    value.forEach((key, item) {
+      final text = item is List && item.isNotEmpty ? item.first.toString() : item?.toString() ?? '';
+      if (text.isNotEmpty) {
+        fields[key.toString()] = text;
+      }
+    });
+    return fields;
   }
 
   static Map<String, dynamic> _map(Object? value) {

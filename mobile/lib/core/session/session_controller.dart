@@ -44,6 +44,7 @@ class SessionController extends ChangeNotifier {
   String pendingMobile = '';
   Account? account;
   PatientProfile? profile;
+  List<PatientProfile> profiles = [];
 
   Future<void> boot() async {
     final started = DateTime.now();
@@ -75,6 +76,7 @@ class SessionController extends ChangeNotifier {
         await tokens.delete(TokenStore.refreshKey);
         account = null;
         profile = null;
+        profiles = [];
         gate = Gate.signedOut;
         return;
       }
@@ -125,6 +127,66 @@ class SessionController extends ChangeNotifier {
       account = current.copyWith(preferredLanguage: created.preferredLanguage);
     }
     gate = Gate.ready;
+    profiles = [created];
+    notifyListeners();
+  }
+
+  Future<void> loadProfiles() async {
+    final listed = await _authed(api.listProfiles);
+    profiles = listed;
+    for (final item in listed) {
+      if (item.relationship == 'self') {
+        profile = item;
+      }
+    }
+    notifyListeners();
+  }
+
+  Future<PatientProfile> addFamilyMember({
+    required String fullName,
+    required String relationship,
+    String? mobileNumber,
+  }) async {
+    final created = await _authed(
+      (access) => api.createFamilyProfile(
+        access: access,
+        fullName: fullName,
+        relationship: relationship,
+        mobileNumber: mobileNumber,
+        preferredLanguage: language,
+      ),
+    );
+    profiles = [...profiles, created];
+    notifyListeners();
+    return created;
+  }
+
+  Future<PatientProfile> updateFamilyMember({
+    required PatientProfile person,
+    required String fullName,
+    required String relationship,
+    String? mobileNumber,
+  }) async {
+    final updated = await _authed(
+      (access) => api.updateFamilyProfile(
+        access: access,
+        profileId: person.id,
+        fullName: fullName,
+        relationship: relationship,
+        mobileNumber: mobileNumber,
+      ),
+    );
+    profiles = [
+      for (final item in profiles)
+        if (item.id == updated.id) updated else item,
+    ];
+    notifyListeners();
+    return updated;
+  }
+
+  Future<void> removeFamilyMember(PatientProfile person) async {
+    await _authed((access) => api.deleteFamilyProfile(access, person.id));
+    profiles = [for (final item in profiles) if (item.id != person.id) item];
     notifyListeners();
   }
 
@@ -141,6 +203,7 @@ class SessionController extends ChangeNotifier {
     await tokens.delete(TokenStore.refreshKey);
     account = null;
     profile = null;
+    profiles = [];
     pendingMobile = '';
     gate = Gate.signedOut;
     notifyListeners();

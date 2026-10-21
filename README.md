@@ -115,6 +115,6 @@ flutter test
 
 ## Next development phase
 
-Patient OTP, session, and the patient's own profile are in place. Next is family profiles, then the service catalogue, then a booking request that staff review by hand. Do not add prices or confirm bookings automatically.
+Patient OTP, session, the patient's own profile, and family profiles are in place. Next is the service catalogue, then a booking request that staff review by hand. Do not add prices or confirm bookings automatically.
 
 The original design documents in `docs/` remain the specification.

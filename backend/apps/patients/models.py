@@ -6,6 +6,15 @@ from django.db import models
 from apps.accounts.models import PreferredLanguage
 
 
+class Relationship(models.TextChoices):
+    SELF = "self", "Self"
+    SPOUSE = "spouse", "Spouse"
+    PARENT = "parent", "Parent"
+    CHILD = "child", "Child"
+    SIBLING = "sibling", "Sibling"
+    OTHER = "other", "Other"
+
+
 class Sex(models.TextChoices):
     MALE = "male", "Male"
     FEMALE = "female", "Female"
@@ -58,6 +67,41 @@ class PatientProfile(models.Model):
                     preferred_language__in=[PreferredLanguage.ENGLISH, PreferredLanguage.TELUGU]
                 ),
                 name="patients_profile_language_valid",
+            ),
+        ]
+
+    def __str__(self):
+        return str(self.id)
+
+
+class FamilyRelationship(models.Model):
+    """Links an account to a profile it may book for. Profiles are not shared by id."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="family_relationships",
+    )
+    patient_profile = models.ForeignKey(
+        PatientProfile,
+        on_delete=models.CASCADE,
+        related_name="family_relationships",
+    )
+    relationship = models.CharField(max_length=30, choices=Relationship.choices)
+    is_default = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "patients_familyrelationship"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["owner", "patient_profile"],
+                name="patients_family_owner_profile_uniq",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(relationship__in=[item.value for item in Relationship]),
+                name="patients_family_relationship_valid",
             ),
         ]
 

@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from apps.accounts.models import UserKind
 from apps.accounts.services import logout_session, refresh_session, request_otp, verify_otp
 from apps.patients.models import PatientProfile
-from apps.patients.serializers import PatientProfileSerializer
+from apps.patients.serializers import serialize_profile
 
 
 class OtpRequestView(APIView):
@@ -71,5 +71,5 @@ def _account_body(user) -> dict:
         "mobile_number": user.mobile_number,
         "preferred_language": user.preferred_language,
         "user_kind": user.user_kind,
-        "profile": None if profile is None else PatientProfileSerializer(profile).data,
+        "profile": None if profile is None else serialize_profile(profile, user),
     }

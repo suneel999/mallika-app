@@ -10,6 +10,9 @@ HOSPITAL_ZONE = ZoneInfo("Asia/Kolkata")
 
 
 class PatientProfileSerializer(serializers.ModelSerializer):
+    relationship = serializers.SerializerMethodField()
+    is_default = serializers.SerializerMethodField()
+
     class Meta:
         model = PatientProfile
         fields = [
@@ -22,12 +25,16 @@ class PatientProfileSerializer(serializers.ModelSerializer):
             "email",
             "preferred_language",
             "hims_patient_id",
+            "relationship",
+            "is_default",
         ]
         read_only_fields = [
             "id",
             "patient_number",
             "mobile_number",
             "hims_patient_id",
+            "relationship",
+            "is_default",
         ]
 
     def validate_full_name(self, value):
@@ -62,3 +69,33 @@ class PatientProfileSerializer(serializers.ModelSerializer):
         if value in ("", None):
             return None
         return value
+
+    def get_relationship(self, obj):
+        link = self._link(obj)
+        return None if link is None else link.relationship
+
+    def get_is_default(self, obj):
+        link = self._link(obj)
+        return False if link is None else link.is_default
+
+    def _link(self, obj):
+        links = self.context.get("links")
+        if isinstance(links, dict):
+            return links.get(obj.id)
+        return None
+
+
+def serialize_profile(profile, owner):
+    from apps.patients.services import links_for
+
+    return PatientProfileSerializer(profile, context={"links": links_for(owner, [profile])}).data
+
+
+def serialize_profiles(profiles, owner):
+    from apps.patients.services import links_for
+
+    return PatientProfileSerializer(
+        profiles,
+        many=True,
+        context={"links": links_for(owner, profiles)},
+    ).data
