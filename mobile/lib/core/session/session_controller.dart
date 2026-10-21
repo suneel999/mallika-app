@@ -2,17 +2,26 @@ import 'package:flutter/foundation.dart';
 
 import '../api/api_exception.dart';
 import '../api/auth_api.dart';
+import '../api/booking_api.dart';
+import '../api/catalogue_api.dart';
 import 'token_store.dart';
 
 enum Gate { booting, signedOut, needsProfile, ready, unreachable }
 
 class SessionController extends ChangeNotifier {
-  SessionController({AuthApi? api, TokenStore? tokens})
+  SessionController({AuthApi? api, CatalogueApi? catalogue, BookingApi? bookings, TokenStore? tokens})
       : api = api ?? AuthApi(),
+        catalogue = catalogue ?? CatalogueApi(),
+        bookings = bookings ?? BookingApi(),
         tokens = tokens ?? SecureTokenStore();
 
-  factory SessionController.preview(Gate gate) {
-    final session = SessionController(api: AuthApi(), tokens: MemoryTokenStore());
+  factory SessionController.preview(Gate gate, {CatalogueApi? catalogue, BookingApi? bookings}) {
+    final session = SessionController(
+      api: AuthApi(),
+      catalogue: catalogue,
+      bookings: bookings,
+      tokens: MemoryTokenStore(),
+    );
     session.gate = gate;
     if (gate == Gate.needsProfile || gate == Gate.ready) {
       session.account = const Account(
@@ -37,6 +46,8 @@ class SessionController extends ChangeNotifier {
   }
 
   final AuthApi api;
+  final CatalogueApi catalogue;
+  final BookingApi bookings;
   final TokenStore tokens;
 
   Gate gate = Gate.booting;
@@ -129,6 +140,47 @@ class SessionController extends ChangeNotifier {
     gate = Gate.ready;
     profiles = [created];
     notifyListeners();
+  }
+
+  Future<List<CatalogueDepartment>> loadDepartments({String search = ''}) {
+    return _authed((access) => catalogue.departments(access, search: search));
+  }
+
+  Future<List<CatalogueDoctor>> loadDoctors({String search = ''}) {
+    return _authed((access) => catalogue.doctors(access, search: search));
+  }
+
+  Future<List<CatalogueService>> loadServices({String search = ''}) {
+    return _authed((access) => catalogue.services(access, search: search));
+  }
+
+  Future<BookingOptions> loadBookingOptions() {
+    return _authed(bookings.options);
+  }
+
+  Future<List<BookingSummary>> loadBookings() {
+    return _authed(bookings.list);
+  }
+
+  Future<BookingSummary> requestBooking({
+    required String idempotencyKey,
+    required String patientProfileId,
+    String? serviceId,
+    required String requestedDate,
+    required String timeSlot,
+    String? note,
+  }) {
+    return _authed(
+      (access) => bookings.create(
+        access: access,
+        idempotencyKey: idempotencyKey,
+        patientProfileId: patientProfileId,
+        serviceId: serviceId,
+        requestedDate: requestedDate,
+        timeSlot: timeSlot,
+        note: note,
+      ),
+    );
   }
 
   Future<void> loadProfiles() async {

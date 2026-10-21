@@ -29,6 +29,7 @@ class AppGate extends StatelessWidget {
             return ProfileSetupScreen(session: session);
           case Gate.ready:
             return HomeScreen(
+              session: session,
               onOpenProfile: () {
                 Navigator.of(context).push(
                   MaterialPageRoute<void>(

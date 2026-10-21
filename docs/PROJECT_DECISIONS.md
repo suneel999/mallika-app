@@ -27,7 +27,7 @@ This file records choices made while scaffolding, and conflicts that are not res
 16. Automated tests use SQLite. The running API uses PostgreSQL. Constraint tests that depend on PostgreSQL-only behavior belong with the schema phase.
 17. Patient colours come from the approved Stitch screens. The crest image is not hotlinked. Address, emergency number, specialist names, and promotional lines stay marked as unconfirmed until the hospital confirms them.
 18. The mobile application id `com.mallikahospitals.mallika_hospitals` is provisional.
-19. Feature packages exist for onboarding, authentication, home, and profile. Doctors, services, bookings, and notifications are still planned.
+19. Feature packages exist for onboarding, authentication, home, profile, catalogue, and bookings. Notifications are still planned.
 20. Django's built-in admin site is not mounted. Staff use the separate web dashboard.
 
 ## Recommended, not built
@@ -47,6 +47,9 @@ On 19 October 2026 the database and API document became the rule where the two d
 - Sessions are a short-lived access token plus a rotating refresh token. Logout revokes that refresh session, and the access token stops working with it.
 - OTP codes are hashed, expire quickly, and stop after a small number of attempts. The local API prints a code to its own stderr as the SMS stand-in. Production refuses that sender.
 - Cancellation and reconciliation routes, when built, follow the database document paths.
+- V1 booking is a request only. The patient pays at the hospital. The app shows no price and takes no payment.
+- V1 has one consultation doctor. The patient sees that doctor's photo on consultation and chooses a date and a time. The app does not ask the patient to pick a department or a doctor. Department-wise doctors are a later version.
+- Other bookable services use the same date-and-time request. A service request does not ask for a doctor.
 
 The table below keeps the original conflict wording.
 
@@ -88,4 +91,4 @@ The patient UI source is the Stitch project `Mallika Hospitals Mobile App` (`pro
 
 ## Next schema phase
 
-Family links are in place. The service catalogue and booking requests are next. Do not add a second model for the same concept. Keep booking status and HIMS reconciliation status independent. Do not add prices, and do not confirm a booking automatically.
+Family links, catalogue tables, and booking requests are in place. Consultation uses the one active doctor and a date and time. A service request uses that service, a date, and a time. The patient app does not ask for a department or a doctor. Staff review, cancellation, and HIMS reconciliation are next. Do not add a second model for the same concept. Keep booking status and HIMS reconciliation status independent. Do not add prices, and do not confirm a booking automatically.

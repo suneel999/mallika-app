@@ -22,20 +22,6 @@ class MedicalService {
   final bool urgent;
 }
 
-class Specialist {
-  const Specialist({
-    required this.name,
-    required this.qualification,
-    required this.experience,
-    required this.availability,
-  });
-
-  final String name;
-  final String qualification;
-  final String experience;
-  final String availability;
-}
-
 const medicalServices = <MedicalService>[
   MedicalService(
     title: 'Consultation',
@@ -92,27 +78,6 @@ const medicalServices = <MedicalService>[
     action: 'Dispatch / Call',
     icon: Icons.airport_shuttle_outlined,
     urgent: false,
-  ),
-];
-
-const specialists = <Specialist>[
-  Specialist(
-    name: 'Dr. K. Srinivas Rao',
-    qualification: 'MD, DM (Cardiology)',
-    experience: '18+ Yrs',
-    availability: 'Available',
-  ),
-  Specialist(
-    name: 'Dr. P. Madhavi Latha',
-    qualification: 'MD, DM (Neurology)',
-    experience: '14+ Yrs',
-    availability: 'Tomorrow',
-  ),
-  Specialist(
-    name: 'Dr. V. Ramana Murthy',
-    qualification: 'MD (General Medicine)',
-    experience: '22+ Yrs',
-    availability: 'Available',
   ),
 ];
 

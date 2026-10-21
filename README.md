@@ -30,7 +30,7 @@ infra/       Deployment notes (no cloud configuration yet)
 
 Backend domains: `accounts`, `patients`, `catalogue`, `bookings`, `reconciliation`, `content`, `notifications`, `reports`, and `audit`.
 
-The mobile library contains `app/`, `core/`, and `features/` for onboarding, authentication, home, and profile.
+The mobile library contains `app/`, `core/`, and `features/` for onboarding, authentication, home, profile, catalogue, and bookings.
 
 ## Prerequisites
 
@@ -115,6 +115,6 @@ flutter test
 
 ## Next development phase
 
-Patient OTP, session, the patient's own profile, and family profiles are in place. Next is the service catalogue, then a booking request that staff review by hand. Do not add prices or confirm bookings automatically.
+Patient OTP, session, profiles, family members, the read-only service catalogue, and booking requests are in place. A request stays pending until staff review it. Next is that staff queue. Do not add prices or confirm bookings automatically.
 
 The original design documents in `docs/` remain the specification.

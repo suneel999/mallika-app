@@ -2,11 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/theme.dart';
+import '../../core/session/session_controller.dart';
+import '../../core/api/api_exception.dart';
+import '../../core/api/booking_api.dart';
+import '../bookings/booking_screens.dart';
 import 'home_content.dart';
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key, this.onOpenProfile});
+  const HomeScreen({super.key, required this.session, this.onOpenProfile});
 
+  final SessionController session;
   final VoidCallback? onOpenProfile;
 
   @override
@@ -19,26 +24,26 @@ class HomeScreen extends StatelessWidget {
           Expanded(
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-              children: const [
-                _HeroBanner(),
-                SizedBox(height: 12),
-                _OfferRow(),
-                SizedBox(height: 16),
-                _EmergencyRibbon(),
-                SizedBox(height: 20),
-                _ServicesSection(),
-                SizedBox(height: 20),
-                _SpecialistsSection(),
-                SizedBox(height: 20),
-                _FindHospitalCard(),
-                SizedBox(height: 20),
-                _TrustBanner(),
+              children: [
+                _HeroBanner(session: session),
+                const SizedBox(height: 12),
+                const _OfferRow(),
+                const SizedBox(height: 16),
+                const _EmergencyRibbon(),
+                const SizedBox(height: 20),
+                _ServicesSection(session: session),
+                const SizedBox(height: 20),
+                _SpecialistsSection(session: session),
+                const SizedBox(height: 20),
+                const _FindHospitalCard(),
+                const SizedBox(height: 20),
+                const _TrustBanner(),
               ],
             ),
           ),
         ],
       ),
-      bottomNavigationBar: _HomeBottomNav(onOpenProfile: onOpenProfile),
+      bottomNavigationBar: _HomeBottomNav(session: session, onOpenProfile: onOpenProfile),
     );
   }
 }
@@ -138,7 +143,9 @@ class _HomeHeader extends StatelessWidget {
 }
 
 class _HeroBanner extends StatelessWidget {
-  const _HeroBanner();
+  const _HeroBanner({required this.session});
+
+  final SessionController session;
 
   @override
   Widget build(BuildContext context) {
@@ -176,7 +183,7 @@ class _HeroBanner extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           FilledButton.icon(
-            onPressed: () => _soon(context),
+            onPressed: () => _openRequest(context, session, consultation: true),
             style: FilledButton.styleFrom(
               backgroundColor: MallikaColors.accent,
               foregroundColor: MallikaColors.headerStart,
@@ -305,7 +312,9 @@ class _EmergencyRibbon extends StatelessWidget {
 }
 
 class _ServicesSection extends StatelessWidget {
-  const _ServicesSection();
+  const _ServicesSection({required this.session});
+
+  final SessionController session;
 
   @override
   Widget build(BuildContext context) {
@@ -348,7 +357,7 @@ class _ServicesSection extends StatelessWidget {
                 for (final service in medicalServices)
                   SizedBox(
                     width: service.urgent ? constraints.maxWidth : cardWidth,
-                    child: _ServiceCard(service: service),
+                    child: _ServiceCard(service: service, session: session),
                   ),
               ],
             );
@@ -360,9 +369,10 @@ class _ServicesSection extends StatelessWidget {
 }
 
 class _ServiceCard extends StatelessWidget {
-  const _ServiceCard({required this.service});
+  const _ServiceCard({required this.service, required this.session});
 
   final MedicalService service;
+  final SessionController session;
 
   @override
   Widget build(BuildContext context) {
@@ -377,7 +387,11 @@ class _ServiceCard extends StatelessWidget {
             _open(context, Uri.parse(emergencyPhoneUri));
             return;
           }
-          _soon(context);
+          if (service.title == 'Consultation') {
+            _openRequest(context, session, consultation: true);
+            return;
+          }
+          _openPublishedServices(context, session);
         },
         child: Padding(
           padding: const EdgeInsets.all(14),
@@ -444,77 +458,93 @@ class _ServiceCard extends StatelessWidget {
   }
 }
 
-class _SpecialistsSection extends StatelessWidget {
-  const _SpecialistsSection();
+class _SpecialistsSection extends StatefulWidget {
+  const _SpecialistsSection({required this.session});
+
+  final SessionController session;
+
+  @override
+  State<_SpecialistsSection> createState() => _SpecialistsSectionState();
+}
+
+class _SpecialistsSectionState extends State<_SpecialistsSection> {
+  ConsultationDoctor? _doctor;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final options = await widget.session.loadBookingOptions();
+      if (mounted) {
+        setState(() => _doctor = options.doctor);
+      }
+    } on ApiException {
+      // The consultation card still opens the date and time form.
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final doctor = _doctor;
+    final photo = doctor?.photoUrl;
+    final hasPhoto = photo != null && photo.isNotEmpty;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Top Specialists', style: Theme.of(context).textTheme.headlineSmall),
-        const Text(
-          'అనుభవజ్ఞులైన వైద్య బృందం',
-          style: TextStyle(color: MallikaColors.onSurfaceVariant, fontSize: 12),
-        ),
+        Text('Consultation', style: Theme.of(context).textTheme.headlineSmall),
         const SizedBox(height: 12),
-        SizedBox(
-          height: 168,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: specialists.length,
-            separatorBuilder: (context, index) => const SizedBox(width: 12),
-            itemBuilder: (context, index) {
-              final doctor = specialists[index];
-              return Container(
-                width: 240,
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: MallikaColors.surface,
-                  borderRadius: BorderRadius.circular(16),
-                ),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: MallikaColors.surface,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 36,
+                backgroundColor: MallikaColors.primaryFixed,
+                backgroundImage: hasPhoto ? NetworkImage(photo) : null,
+                child: hasPhoto ? null : const Icon(Icons.person, size: 36, color: MallikaColors.primary),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      doctor.availability,
-                      style: const TextStyle(
-                        color: MallikaColors.secondary,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    Text(
-                      doctor.name,
+                      doctor?.fullName ?? 'Consultation',
                       style: const TextStyle(
                         color: MallikaColors.primary,
                         fontWeight: FontWeight.w700,
+                        fontSize: 18,
                       ),
                     ),
-                    Text(
-                      doctor.qualification,
-                      style: const TextStyle(fontSize: 12, color: MallikaColors.onSurfaceVariant),
-                    ),
-                    Text(
-                      'Experience  ${doctor.experience}',
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                    const Spacer(),
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton(
-                        onPressed: () => _soon(context),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: MallikaColors.primary,
-                          minimumSize: const Size.fromHeight(40),
-                        ),
-                        child: const Text('Book Consultation'),
+                    if ((doctor?.qualification ?? '').isNotEmpty)
+                      Text(
+                        doctor!.qualification!,
+                        style: const TextStyle(fontSize: 12, color: MallikaColors.onSurfaceVariant),
                       ),
+                    const SizedBox(height: 4),
+                    const Text('Choose a date and a time. No department to pick.'),
+                    const SizedBox(height: 8),
+                    FilledButton(
+                      onPressed: () => _openRequest(context, widget.session, consultation: true),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: MallikaColors.primary,
+                        minimumSize: const Size.fromHeight(40),
+                      ),
+                      child: const Text('Book Consultation'),
                     ),
                   ],
                 ),
-              );
-            },
+              ),
+            ],
           ),
         ),
       ],
@@ -608,8 +638,9 @@ class _TrustBanner extends StatelessWidget {
 }
 
 class _HomeBottomNav extends StatelessWidget {
-  const _HomeBottomNav({this.onOpenProfile});
+  const _HomeBottomNav({required this.session, this.onOpenProfile});
 
+  final SessionController session;
   final VoidCallback? onOpenProfile;
 
   @override
@@ -619,6 +650,14 @@ class _HomeBottomNav extends StatelessWidget {
       backgroundColor: MallikaColors.surface,
       indicatorColor: MallikaColors.secondaryFixed,
       onDestinationSelected: (index) {
+        if (index == 1) {
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => BookingListScreen(session: session),
+            ),
+          );
+          return;
+        }
         if (index == 3 && onOpenProfile != null) {
           onOpenProfile!();
           return;
@@ -635,6 +674,22 @@ class _HomeBottomNav extends StatelessWidget {
       ],
     );
   }
+}
+
+void _openRequest(BuildContext context, SessionController session, {bool consultation = false}) {
+  Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (_) => BookingRequestScreen(session: session, consultation: consultation),
+    ),
+  );
+}
+
+void _openPublishedServices(BuildContext context, SessionController session) {
+  Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (_) => PublishedServicesScreen(session: session),
+    ),
+  );
 }
 
 void _soon(BuildContext context) {
