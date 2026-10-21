@@ -204,6 +204,98 @@ export async function reviewBooking(
   );
 }
 
+export type StaffDepartment = {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  display_order: number;
+  is_active: boolean;
+};
+
+export type StaffService = {
+  id: string;
+  name: string;
+  service_type: string;
+  description: string | null;
+  preparation_instructions: string | null;
+  display_order: number;
+  is_active: boolean;
+};
+
+export type StaffDoctor = {
+  id: string;
+  full_name: string;
+  qualification: string | null;
+  specialty_summary: string | null;
+  bio: string | null;
+  photo_url: string | null;
+  display_order: number;
+  is_active: boolean;
+  departments: { id: string; name: string; is_primary: boolean }[];
+};
+
+async function listAll<T>(path: string): Promise<T[]> {
+  const rows: T[] = [];
+  const limit = 100;
+  let offset = 0;
+  for (let page = 0; page < 20; page += 1) {
+    const body = (await decode(await request(`${path}?limit=${limit}&offset=${offset}`))) as Page<T>;
+    const results = body.results ?? [];
+    rows.push(...results);
+    offset += limit;
+    if (results.length < limit || offset >= (body.count ?? 0)) {
+      break;
+    }
+  }
+  return rows;
+}
+
+export function listStaffDepartments() {
+  return listAll<StaffDepartment>("/admin/departments/");
+}
+
+export function listStaffDoctors() {
+  return listAll<StaffDoctor>("/admin/doctors/");
+}
+
+export function listStaffServices() {
+  return listAll<StaffService>("/admin/services/");
+}
+
+export async function saveStaffDepartment(record: StaffDepartment | null, body: Record<string, unknown>) {
+  const path = record ? `/admin/departments/${record.id}/` : "/admin/departments/";
+  await decode(
+    await request(path, {
+      method: record ? "PATCH" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }),
+  );
+}
+
+export async function saveStaffDoctor(record: StaffDoctor | null, body: Record<string, unknown>) {
+  const path = record ? `/admin/doctors/${record.id}/` : "/admin/doctors/";
+  await decode(
+    await request(path, {
+      method: record ? "PATCH" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }),
+  );
+}
+
+export async function saveStaffService(record: StaffService | null, body: Record<string, unknown>) {
+  const path = record ? `/admin/services/${record.id}/` : "/admin/services/";
+  await decode(
+    await request(path, {
+      method: record ? "PATCH" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }),
+  );
+}
+
 export async function saveHospitalCheck(
   bookingId: string,
   check: { status: string; hims_appointment_id: string; hims_patient_id: string; note: string },

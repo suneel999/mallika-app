@@ -79,6 +79,15 @@ label {
   font-weight: 600;
 }
 
+label span {
+  font-weight: 500;
+}
+
+fieldset {
+  border: 1px solid #c5c6cf;
+  border-radius: 10px;
+}
+
 input,
 select,
 textarea {

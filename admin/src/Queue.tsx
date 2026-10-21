@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { ApiException, bookingPageSize, listBookings, staffLogout, type BookingPage } from "./api";
 import { checkLabel, requestLabel, statusLabel } from "./labels";
@@ -53,9 +53,14 @@ export function Queue() {
           <h1>Booking queue</h1>
           <p>Requests stay pending until a time is confirmed.</p>
         </div>
-        <button className="secondary" type="button" onClick={signOut}>
-          Sign out
-        </button>
+        <div className="actions">
+          <Link className="button-link secondary" to="/catalogue">
+            Catalogue
+          </Link>
+          <button className="secondary" type="button" onClick={signOut}>
+            Sign out
+          </button>
+        </div>
       </header>
       <main className="page">
         <div className="toolbar">

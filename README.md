@@ -11,7 +11,7 @@ The system is a modular monolith sized for fewer than 100 bookings a day.
 | Patient app | Flutter, Android and iOS |
 | API | Python, Django, Django REST Framework |
 | Database | PostgreSQL |
-| Administration | React, TypeScript, and Vite desk for the booking queue and the hospital-system check. See `admin/README.md`. |
+| Administration | React, TypeScript, and Vite desk for the booking queue, the hospital-system check, and the catalogue. See `admin/README.md`. |
 | Files | Amazon S3 for promotional banners and other approved assets |
 | Notifications | SMS and push through provider interfaces |
 | Hosting | AWS-ready later. Nothing is deployed in this phase. |
@@ -127,6 +127,6 @@ flutter test
 
 ## Next development phase
 
-Patient OTP, session, profiles, family members, catalogue reads, booking requests, staff review, the separate hospital-system check, in-app updates, and the staff desk are in place. A request stays pending until staff confirm a time. Updates are stored for the patient and are not sent by push or SMS. Catalogue editing, reports, and audit search are later. Do not add prices or confirm bookings automatically.
+Patient OTP, session, profiles, family members, catalogue reads, booking requests, staff review, the separate hospital-system check, in-app updates, and the staff desk are in place. Staff can publish the consultation doctor and bookable services. A request stays pending until staff confirm a time. Updates are stored for the patient and are not sent by push or SMS. Reports and audit search are later. Do not add prices or confirm bookings automatically.
 
 The original design documents in `docs/` remain the specification.

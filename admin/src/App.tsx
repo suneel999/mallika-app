@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import { BookingDesk } from "./BookingDesk";
+import { Catalogue } from "./Catalogue";
 import { Queue } from "./Queue";
 import { SignIn } from "./SignIn";
 import { readSession } from "./session";
@@ -17,6 +18,14 @@ export function App() {
   return (
     <Routes>
       <Route path="/" element={<SignIn />} />
+      <Route
+        path="/catalogue"
+        element={
+          <RequireStaff>
+            <Catalogue />
+          </RequireStaff>
+        }
+      />
       <Route
         path="/bookings"
         element={

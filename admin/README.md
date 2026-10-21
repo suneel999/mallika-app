@@ -21,5 +21,6 @@ Set `VITE_API_BASE_URL` when the API is not at `http://127.0.0.1:8000/api/v1`.
 - The booking queue, including the saved hospital-system check, the total, and the next page
 - Review, confirm a time, reject, complete, mark a missed visit, and decide a cancellation
 - Record the hospital-system check without changing the booking status
+- Publish, correct, or unpublish departments, doctors, and services. A photo is an address, not a file. No price is stored
 
-Catalogue editing, banner uploads, patient search, reports, and audit search are not in this desk. Those screens wait until the API exposes them.
+Banner uploads, patient search, reports, and audit search are not in this desk. Those screens wait until the API exposes them.
