@@ -41,6 +41,8 @@ export type StaffBooking = {
   id: string;
   reference: string;
   patient_name: string;
+  patient_number?: string | null;
+  patient_mobile_number?: string | null;
   booking_type: string;
   doctor_name: string | null;
   service_name: string | null;
@@ -294,6 +296,91 @@ export async function saveStaffService(record: StaffService | null, body: Record
       body: JSON.stringify(body),
     }),
   );
+}
+
+export type StaffPatient = {
+  id: string;
+  patient_number: string;
+  full_name: string;
+  mobile_number: string;
+};
+
+export type StaffPatientDetail = StaffPatient & {
+  date_of_birth: string | null;
+  sex: string | null;
+  email: string | null;
+  preferred_language: string;
+};
+
+export async function searchPatients(query: string, offset = 0): Promise<{ count: number; results: StaffPatient[] }> {
+  const params = new URLSearchParams({
+    q: query,
+    limit: String(bookingPageSize),
+    offset: String(offset),
+  });
+  const body = (await decode(await request(`/admin/patients/?${params}`))) as Page<StaffPatient>;
+  return { count: body.count ?? 0, results: body.results ?? [] };
+}
+
+export async function getStaffPatient(profileId: string): Promise<StaffPatientDetail> {
+  return (await decode(await request(`/admin/patients/${profileId}/`))) as StaffPatientDetail;
+}
+
+export async function updateStaffPatient(profileId: string, body: Record<string, unknown>) {
+  return (await decode(
+    await request(`/admin/patients/${profileId}/`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }),
+  )) as StaffPatientDetail;
+}
+
+export type BookingCounts = {
+  from: string | null;
+  to: string | null;
+  total: number;
+  by_status: Record<string, number>;
+};
+
+export async function loadBookingCounts(from = "", to = ""): Promise<BookingCounts> {
+  const params = new URLSearchParams();
+  if (from) {
+    params.set("from", from);
+  }
+  if (to) {
+    params.set("to", to);
+  }
+  const query = params.toString();
+  return (await decode(await request(`/admin/dashboard/${query ? `?${query}` : ""}`))) as BookingCounts;
+}
+
+export type AuditEntry = {
+  id: string;
+  action: string;
+  entity_type: string;
+  entity_id: string | null;
+  actor_mobile_number: string | null;
+  created_at: string;
+  details: Record<string, unknown>;
+};
+
+export async function listAuditLogs(
+  filters: { action?: string; entityType?: string },
+  offset = 0,
+): Promise<{ count: number; results: AuditEntry[] }> {
+  const params = new URLSearchParams({
+    limit: String(bookingPageSize),
+    offset: String(offset),
+  });
+  if (filters.action) {
+    params.set("action", filters.action);
+  }
+  if (filters.entityType) {
+    params.set("entity_type", filters.entityType);
+  }
+  const body = (await decode(await request(`/admin/audit-logs/?${params}`))) as Page<AuditEntry>;
+  return { count: body.count ?? 0, results: body.results ?? [] };
 }
 
 export async function saveHospitalCheck(

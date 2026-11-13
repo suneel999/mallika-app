@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import {
   ApiException,
@@ -9,11 +9,11 @@ import {
   saveStaffDepartment,
   saveStaffDoctor,
   saveStaffService,
-  staffLogout,
   type StaffDepartment,
   type StaffDoctor,
   type StaffService,
 } from "./api";
+import { DeskNav } from "./DeskNav";
 
 type Tab = "doctors" | "services" | "departments";
 
@@ -54,41 +54,23 @@ export function Catalogue() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function signOut() {
-    staffLogout();
-    navigate("/");
-  }
-
   return (
     <>
-      <header className="topbar">
-        <div>
-          <h1>Catalogue</h1>
-          <p>Publish the consultation doctor and the services patients can request.</p>
-        </div>
-        <div className="actions">
-          <Link className="button-link secondary" to="/bookings">
-            Booking queue
-          </Link>
-          <button className="secondary" type="button" onClick={signOut}>
-            Sign out
-          </button>
-        </div>
-      </header>
+      <DeskNav title="Doctors & services" subtitle="What patients can see and request in the app." />
       <main className="page">
-        <div className="actions">
-          <button className={tab === "doctors" ? "" : "secondary"} type="button" onClick={() => setTab("doctors")}>
-            Doctors
+        <div className="tabs">
+          <button className={`tab${tab === "doctors" ? " active" : ""}`} type="button" onClick={() => setTab("doctors")}>
+            Doctors <span className="count">{doctors.length}</span>
           </button>
-          <button className={tab === "services" ? "" : "secondary"} type="button" onClick={() => setTab("services")}>
-            Services
+          <button className={`tab${tab === "services" ? " active" : ""}`} type="button" onClick={() => setTab("services")}>
+            Services <span className="count">{services.length}</span>
           </button>
           <button
-            className={tab === "departments" ? "" : "secondary"}
+            className={`tab${tab === "departments" ? " active" : ""}`}
             type="button"
             onClick={() => setTab("departments")}
           >
-            Departments
+            Departments <span className="count">{departments.length}</span>
           </button>
         </div>
         {error ? <p className="error">{error}</p> : null}
@@ -184,16 +166,16 @@ function DoctorEditor({
           <input value={summary} onChange={(event) => setSummary(event.target.value)} />
         </label>
         <label>
-          Photo address
+          Photo web address
           <input value={photoUrl} onChange={(event) => setPhotoUrl(event.target.value)} placeholder="https://" />
         </label>
         <label>
-          Display order
+          Position in the list
           <input value={order} onChange={(event) => setOrder(event.target.value)} inputMode="numeric" />
         </label>
         <label>
           <span>
-            <input type="checkbox" checked={active} onChange={(event) => setActive(event.target.checked)} /> Published
+            <input type="checkbox" checked={active} onChange={(event) => setActive(event.target.checked)} /> Show in the patient app
           </span>
         </label>
         {departments.length > 0 ? (
@@ -244,9 +226,9 @@ function DoctorEditor({
         <h2>Doctors</h2>
         {doctors.length === 0 ? <p>No doctor has been published.</p> : null}
         {doctors.map((doctor) => (
-          <button className="secondary" key={doctor.id} type="button" onClick={() => edit(doctor)}>
+          <button className="list-item" key={doctor.id} type="button" onClick={() => edit(doctor)}>
             {doctor.full_name}
-            {doctor.is_active ? "" : " · Unpublished"}
+            <span className={`badge ${doctor.is_active ? "green" : "gray"}`}>{doctor.is_active ? "Shown in app" : "Hidden"}</span>
           </button>
         ))}
       </section>
@@ -330,12 +312,12 @@ function ServiceEditor({
           <textarea value={preparation} onChange={(event) => setPreparation(event.target.value)} />
         </label>
         <label>
-          Display order
+          Position in the list
           <input value={order} onChange={(event) => setOrder(event.target.value)} inputMode="numeric" />
         </label>
         <label>
           <span>
-            <input type="checkbox" checked={active} onChange={(event) => setActive(event.target.checked)} /> Published
+            <input type="checkbox" checked={active} onChange={(event) => setActive(event.target.checked)} /> Show in the patient app
           </span>
         </label>
         <div className="actions">
@@ -353,9 +335,9 @@ function ServiceEditor({
         <h2>Services</h2>
         {services.length === 0 ? <p>No service has been published.</p> : null}
         {services.map((service) => (
-          <button className="secondary" key={service.id} type="button" onClick={() => edit(service)}>
+          <button className="list-item" key={service.id} type="button" onClick={() => edit(service)}>
             {service.name}
-            {service.is_active ? "" : " · Unpublished"}
+            <span className={`badge ${service.is_active ? "green" : "gray"}`}>{service.is_active ? "Shown in app" : "Hidden"}</span>
           </button>
         ))}
       </section>
@@ -430,12 +412,12 @@ function DepartmentEditor({
           <textarea value={description} onChange={(event) => setDescription(event.target.value)} />
         </label>
         <label>
-          Display order
+          Position in the list
           <input value={order} onChange={(event) => setOrder(event.target.value)} inputMode="numeric" />
         </label>
         <label>
           <span>
-            <input type="checkbox" checked={active} onChange={(event) => setActive(event.target.checked)} /> Published
+            <input type="checkbox" checked={active} onChange={(event) => setActive(event.target.checked)} /> Show in the patient app
           </span>
         </label>
         <div className="actions">
@@ -453,9 +435,9 @@ function DepartmentEditor({
         <h2>Departments</h2>
         {departments.length === 0 ? <p>No department has been published.</p> : null}
         {departments.map((department) => (
-          <button className="secondary" key={department.id} type="button" onClick={() => edit(department)}>
+          <button className="list-item" key={department.id} type="button" onClick={() => edit(department)}>
             {department.name}
-            {department.is_active ? "" : " · Unpublished"}
+            <span className={`badge ${department.is_active ? "green" : "gray"}`}>{department.is_active ? "Shown in app" : "Hidden"}</span>
           </button>
         ))}
       </section>

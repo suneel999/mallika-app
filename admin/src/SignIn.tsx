@@ -30,35 +30,40 @@ export function SignIn() {
   }
 
   return (
-    <main className="card">
-      <h1>Mallika Hospitals</h1>
-      <p className="muted">Staff desk</p>
-      <form className="stack" onSubmit={onSubmit}>
-        <label>
-          Mobile number
-          <input
-            value={mobileNumber}
-            onChange={(event) => setMobileNumber(event.target.value)}
-            autoComplete="username"
-            inputMode="tel"
-            required
-          />
-        </label>
-        <label>
-          Password
-          <input
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            autoComplete="current-password"
-            required
-          />
-        </label>
-        {error ? <p className="error">{error}</p> : null}
-        <button type="submit" disabled={busy}>
-          {busy ? "Signing in…" : "Sign in"}
-        </button>
-      </form>
-    </main>
+    <div className="signin">
+      <main className="card">
+        <img src="/mallika_logo.png" alt="Mallika Hospitals" />
+        <h1>Reception desk</h1>
+        <p className="muted">Sign in with your staff mobile number.</p>
+        <form className="stack" onSubmit={onSubmit}>
+          <label>
+            Mobile number
+            <input
+              value={mobileNumber}
+              onChange={(event) => setMobileNumber(event.target.value)}
+              autoComplete="username"
+              inputMode="tel"
+              placeholder="10-digit mobile number"
+              autoFocus
+              required
+            />
+          </label>
+          <label>
+            Password
+            <input
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              autoComplete="current-password"
+              required
+            />
+          </label>
+          {error ? <p className="error">{error}</p> : null}
+          <button type="submit" disabled={busy}>
+            {busy ? "Signing in…" : "Sign in"}
+          </button>
+        </form>
+      </main>
+    </div>
   );
 }
