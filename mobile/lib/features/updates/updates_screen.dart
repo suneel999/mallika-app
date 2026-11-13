@@ -4,6 +4,7 @@ import '../../app/theme.dart';
 import '../../core/api/api_exception.dart';
 import '../../core/api/updates_api.dart';
 import '../../core/session/session_controller.dart';
+import '../shared/mallika_widgets.dart';
 
 class UpdatesScreen extends StatefulWidget {
   const UpdatesScreen({super.key, required this.session});
@@ -26,16 +27,19 @@ class _UpdatesScreenState extends State<UpdatesScreen> {
     _load();
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+  Future<void> _load({bool quiet = false}) async {
+    if (!quiet) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
     try {
       final banners = await widget.session.loadBanners();
       final updates = await widget.session.loadUpdates();
       _banners = banners;
       _updates = updates;
+      _error = null;
     } on ApiException catch (error) {
       _error = error.displayMessage;
     } finally {
@@ -49,84 +53,113 @@ class _UpdatesScreenState extends State<UpdatesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: MallikaColors.background,
-      appBar: AppBar(
-        title: const Text('Updates'),
-        backgroundColor: MallikaColors.primary,
-        foregroundColor: Colors.white,
-      ),
+      appBar: AppBar(title: const Text('Updates')),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? _UpdatesNotice(text: _error!, onRetry: _load)
-              : _banners.isEmpty && _updates.isEmpty
-                  ? const _UpdatesNotice(text: 'No updates yet.')
-                  : ListView(
-                      padding: const EdgeInsets.all(16),
-                      children: [
-                        for (final banner in _banners) ...[
-                          _UpdateCard(title: banner.title, body: ''),
-                          const SizedBox(height: 12),
-                        ],
-                        for (final update in _updates) ...[
-                          _UpdateCard(title: update.title, body: update.body),
-                          const SizedBox(height: 12),
-                        ],
-                      ],
+          ? MallikaNotice(
+              icon: Icons.cloud_off_outlined,
+              title: _error!,
+              onRetry: _load,
+            )
+          : _banners.isEmpty && _updates.isEmpty
+          ? const MallikaNotice(
+              icon: Icons.notifications_off_outlined,
+              title: 'No updates yet.',
+              message: 'Changes to your bookings appear here.',
+            )
+          : RefreshIndicator(
+              onRefresh: () => _load(quiet: true),
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(16),
+                children: [
+                  for (final banner in _banners) ...[
+                    _UpdateCard(
+                      icon: Icons.campaign_rounded,
+                      title: banner.title,
+                      body: '',
+                      when: '',
                     ),
+                    const SizedBox(height: 12),
+                  ],
+                  for (final update in _updates) ...[
+                    _UpdateCard(
+                      icon: Icons.event_available_rounded,
+                      title: update.title,
+                      body: update.body,
+                      when: prettyDateTime(update.createdAt),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                ],
+              ),
+            ),
     );
   }
 }
 
 class _UpdateCard extends StatelessWidget {
-  const _UpdateCard({required this.title, required this.body});
+  const _UpdateCard({
+    required this.icon,
+    required this.title,
+    required this.body,
+    required this.when,
+  });
 
+  final IconData icon;
   final String title;
   final String body;
+  final String when;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
-      child: Column(
+    return MallikaCard(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: const TextStyle(color: MallikaColors.primary, fontSize: 18, fontWeight: FontWeight.w700),
+          IconTile(icon: icon),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontFamily: 'Plus Jakarta Sans',
+                    color: MallikaColors.ink,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    height: 1.25,
+                  ),
+                ),
+                if (body.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    body,
+                    style: const TextStyle(
+                      color: MallikaColors.onSurfaceVariant,
+                      fontSize: 14,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+                if (when.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    when,
+                    style: const TextStyle(
+                      color: MallikaColors.muted,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
-          if (body.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Text(body),
-          ],
         ],
-      ),
-    );
-  }
-}
-
-class _UpdatesNotice extends StatelessWidget {
-  const _UpdatesNotice({required this.text, this.onRetry});
-
-  final String text;
-  final VoidCallback? onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(text, textAlign: TextAlign.center),
-            if (onRetry != null) ...[
-              const SizedBox(height: 12),
-              OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
-            ],
-          ],
-        ),
       ),
     );
   }

@@ -5,9 +5,9 @@ import 'package:flutter/services.dart';
 
 import '../../app/theme.dart';
 import '../../core/api/api_exception.dart';
-import '../../core/phone.dart';
+import '../../core/config.dart';
 import '../../core/session/session_controller.dart';
-import '../shared/mallika_widgets.dart';
+import 'auth_chrome.dart';
 
 class OtpScreen extends StatefulWidget {
   const OtpScreen({
@@ -38,6 +38,9 @@ class _OtpScreenState extends State<OtpScreen> {
   void initState() {
     super.initState();
     _remaining = widget.resendAfter;
+    if (AppConfig.demoOtp.isNotEmpty) {
+      _code.text = AppConfig.demoOtp;
+    }
     _startTimer();
   }
 
@@ -110,110 +113,230 @@ class _OtpScreenState extends State<OtpScreen> {
     }
   }
 
+  String get _sentTo {
+    final digits = widget.mobileNumber.replaceAll(RegExp('[^0-9]'), '');
+    if (digits.length < 4) {
+      return 'your mobile';
+    }
+    return 'the number ending ${digits.substring(digits.length - 4)}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final digits = _code.text;
-    final clock = '${(_remaining ~/ 60).toString().padLeft(2, '0')}:${(_remaining % 60).toString().padLeft(2, '0')}s';
+    final clock =
+        '${(_remaining ~/ 60).toString().padLeft(2, '0')}:${(_remaining % 60).toString().padLeft(2, '0')}';
     return Scaffold(
-      backgroundColor: MallikaColors.background,
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
           children: [
-            MallikaBackBar(title: 'OTP Verification', onBack: widget.onBack),
-            const SizedBox(height: 12),
-            const Text(
-              'Verify Your Mobile',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: MallikaColors.primary,
-                fontSize: 26,
-                fontWeight: FontWeight.w700,
-                fontFamily: 'Plus Jakarta Sans',
+            Align(
+              alignment: Alignment.centerLeft,
+              child: IconButton(
+                onPressed: widget.onBack,
+                style: IconButton.styleFrom(
+                  backgroundColor: MallikaColors.background,
+                  side: const BorderSide(color: MallikaColors.secondaryFixed),
+                ),
+                icon: const Icon(Icons.arrow_back, color: authNavy, size: 22),
               ),
             ),
+            const SizedBox(height: 28),
+            const Center(child: _CodeBadge()),
+            const SizedBox(height: 24),
             const Text(
-              'మొబైల్ నంబర్ ధృవీకరణ',
+              'Enter Verification Code',
               textAlign: TextAlign.center,
-              style: TextStyle(color: MallikaColors.secondary, fontSize: 18, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                fontFamily: 'Plus Jakarta Sans',
+                color: authNavy,
+                fontSize: 24,
+                fontWeight: FontWeight.w800,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
-              maskIndianMobile(widget.mobileNumber),
+              AppConfig.demoOtp.isEmpty
+                  ? 'Code sent to $_sentTo'
+                  : 'Demo code ${AppConfig.demoOtp}',
               textAlign: TextAlign.center,
-              style: const TextStyle(fontWeight: FontWeight.w600),
+              style: const TextStyle(
+                color: authMuted,
+                fontSize: 14,
+                height: 1.4,
+              ),
             ),
-            const SizedBox(height: 8),
-            const Text(
-              'Enter 6-digit verification code',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: MallikaColors.onSurfaceVariant),
-            ),
-            const SizedBox(height: 16),
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: List.generate(6, (index) {
-                    final filled = index < digits.length;
-                    return Container(
-                      width: 46,
-                      height: 56,
+            const SizedBox(height: 28),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                const gap = 10.0;
+                final box = ((constraints.maxWidth - gap * 5) / 6).clamp(
+                  40.0,
+                  54.0,
+                );
+                final rowWidth = box * 6 + gap * 5;
+                return Align(
+                  alignment: Alignment.center,
+                  child: SizedBox(
+                    width: rowWidth,
+                    height: box * 1.16,
+                    child: Stack(
                       alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: filled ? MallikaColors.secondary : const Color(0xFFC2C7CF),
+                      children: [
+                        Row(
+                          children: List.generate(6, (index) {
+                            final filled = index < digits.length;
+                            final active = index == digits.length;
+                            return Container(
+                              width: box,
+                              height: box * 1.16,
+                              margin: EdgeInsets.only(
+                                left: index == 0 ? 0 : gap,
+                              ),
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: filled
+                                    ? Colors.white
+                                    : MallikaColors.background,
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: active || filled
+                                      ? authNavy
+                                      : MallikaColors.secondaryFixed,
+                                  width: active ? 1.8 : 1.2,
+                                ),
+                              ),
+                              child: Text(
+                                filled ? digits[index] : '',
+                                style: const TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w700,
+                                  color: authNavy,
+                                ),
+                              ),
+                            );
+                          }),
                         ),
-                      ),
-                      child: Text(
-                        filled ? digits[index] : '',
-                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
-                      ),
-                    );
-                  }),
-                ),
-                TextField(
-                  key: const Key('otp-code'),
-                  controller: _code,
-                  autofocus: true,
-                  keyboardType: TextInputType.number,
-                  autofillHints: const [AutofillHints.oneTimeCode],
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(6)],
-                  style: const TextStyle(color: Colors.transparent),
-                  cursorColor: Colors.transparent,
-                  showCursor: false,
-                  decoration: const InputDecoration(
-                    border: InputBorder.none,
-                    counterText: '',
+                        TextField(
+                          key: const Key('otp-code'),
+                          controller: _code,
+                          autofocus: true,
+                          keyboardType: TextInputType.number,
+                          autofillHints: const [AutofillHints.oneTimeCode],
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(6),
+                          ],
+                          style: const TextStyle(color: Colors.transparent),
+                          cursorColor: Colors.transparent,
+                          showCursor: false,
+                          decoration: const InputDecoration(
+                            border: InputBorder.none,
+                            counterText: '',
+                          ),
+                          onChanged: (_) => setState(() {}),
+                        ),
+                      ],
+                    ),
                   ),
-                  onChanged: (_) => setState(() {}),
-                ),
-              ],
+                );
+              },
             ),
             if (_error != null) ...[
-              const SizedBox(height: 8),
-              Text(_error!, textAlign: TextAlign.center, style: const TextStyle(color: MallikaColors.error)),
+              const SizedBox(height: 12),
+              Text(
+                _error!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: MallikaColors.error),
+              ),
             ],
-            const SizedBox(height: 16),
-            Text(
-              _remaining > 0 ? "Didn't receive code? $clock" : "Didn't receive code?",
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: MallikaColors.onSurfaceVariant),
+            const SizedBox(height: 24),
+            AuthGradientButton(
+              label: 'Verify',
+              busy: _busy,
+              onPressed: _verify,
             ),
-            TextButton(
-              onPressed: _remaining == 0 && !_busy ? _resend : null,
-              child: const Text('Resend OTP'),
-            ),
-            MallikaButton(label: 'Verify & Continue', busy: _busy, onPressed: _verify),
-            const SizedBox(height: 20),
-            const Text(
-              'Do not share your OTP with anyone. Mallika Hospitals staff will never ask for your verification code over call or message.',
-              style: TextStyle(color: MallikaColors.onSurfaceVariant, fontSize: 13, height: 1.4),
-            ),
+            const SizedBox(height: 14),
+            if (_remaining == 0)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    'Did not get the code?',
+                    style: TextStyle(color: authMuted, fontSize: 14),
+                  ),
+                  TextButton(
+                    onPressed: _busy ? null : _resend,
+                    child: const Text(
+                      'Resend OTP',
+                      style: TextStyle(
+                        color: authLink,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            else
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Text.rich(
+                  TextSpan(
+                    style: const TextStyle(color: authMuted, fontSize: 14),
+                    children: [
+                      const TextSpan(text: 'Resend code in '),
+                      TextSpan(
+                        text: clock,
+                        style: const TextStyle(
+                          color: authNavy,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Navy badge with an amber ring, in place of the drawn lock artwork.
+class _CodeBadge extends StatelessWidget {
+  const _CodeBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 112,
+      height: 112,
+      alignment: Alignment.center,
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+        color: Color(0xFFE8F0FE),
+      ),
+      child: Container(
+        width: 80,
+        height: 80,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [authNavy, authNavyLight],
+          ),
+          border: Border.all(color: MallikaColors.accent, width: 3),
+        ),
+        child: const Icon(
+          Icons.verified_user_rounded,
+          color: Colors.white,
+          size: 38,
         ),
       ),
     );

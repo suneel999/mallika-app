@@ -104,8 +104,8 @@ class VerifiedSession {
 
 class AuthApi {
   AuthApi({http.Client? client, String? baseUrl})
-      : _injected = client,
-        baseUrl = _trim(baseUrl ?? AppConfig.apiBaseUrl);
+    : _injected = client,
+      baseUrl = _trim(baseUrl ?? AppConfig.apiBaseUrl);
 
   final http.Client? _injected;
   http.Client? _owned;
@@ -113,10 +113,16 @@ class AuthApi {
 
   http.Client get _client => _injected ?? (_owned ??= http.Client());
 
-  Future<OtpRequest> requestOtp(String mobileNumber) async {
-    final body = await _send('POST', '/auth/otp/request/', json: {
-      'mobile_number': mobileNumber,
-    });
+  Future<OtpRequest> requestOtp(
+    String mobileNumber, {
+    Duration? timeout,
+  }) async {
+    final body = await _send(
+      'POST',
+      '/auth/otp/request/',
+      json: {'mobile_number': mobileNumber},
+      timeout: timeout,
+    );
     return OtpRequest(
       mobileNumber: body['mobile_number'] as String,
       expiresIn: (body['expires_in'] as num).toInt(),
@@ -127,23 +133,33 @@ class AuthApi {
   Future<VerifiedSession> verifyOtp({
     required String mobileNumber,
     required String code,
+    Duration? timeout,
   }) async {
-    final body = await _send('POST', '/auth/otp/verify/', json: {
-      'mobile_number': mobileNumber,
-      'code': code,
-    });
+    final body = await _send(
+      'POST',
+      '/auth/otp/verify/',
+      json: {'mobile_number': mobileNumber, 'code': code},
+      timeout: timeout,
+    );
     return _session(body);
   }
 
   Future<VerifiedSession> refresh(String refreshToken) async {
-    final body = await _send('POST', '/auth/token/refresh/', json: {
-      'refresh': refreshToken,
-    });
+    final body = await _send(
+      'POST',
+      '/auth/token/refresh/',
+      json: {'refresh': refreshToken},
+    );
     return _session(body);
   }
 
   Future<void> logout(String refreshToken) async {
-    await _send('POST', '/auth/logout/', json: {'refresh': refreshToken}, allowEmpty: true);
+    await _send(
+      'POST',
+      '/auth/logout/',
+      json: {'refresh': refreshToken},
+      allowEmpty: true,
+    );
   }
 
   Future<PatientProfile> createProfile({
@@ -163,7 +179,12 @@ class AuthApi {
     if (sex != null) {
       payload['sex'] = sex;
     }
-    final body = await _send('POST', '/me/patient-profiles/', access: access, json: payload);
+    final body = await _send(
+      'POST',
+      '/me/patient-profiles/',
+      access: access,
+      json: payload,
+    );
     return PatientProfile.fromJson(body);
   }
 
@@ -194,7 +215,12 @@ class AuthApi {
     if (mobileNumber != null && mobileNumber.isNotEmpty) {
       payload['mobile_number'] = mobileNumber;
     }
-    final body = await _send('POST', '/me/patient-profiles/', access: access, json: payload);
+    final body = await _send(
+      'POST',
+      '/me/patient-profiles/',
+      access: access,
+      json: payload,
+    );
     return PatientProfile.fromJson(body);
   }
 
@@ -219,7 +245,12 @@ class AuthApi {
   }
 
   Future<void> deleteFamilyProfile(String access, String profileId) async {
-    await _send('DELETE', '/me/patient-profiles/$profileId/', access: access, allowEmpty: true);
+    await _send(
+      'DELETE',
+      '/me/patient-profiles/$profileId/',
+      access: access,
+      allowEmpty: true,
+    );
   }
 
   VerifiedSession _session(Map<String, dynamic> body) {
@@ -239,6 +270,7 @@ class AuthApi {
     Map<String, dynamic>? json,
     String? access,
     bool allowEmpty = false,
+    Duration? timeout,
   }) async {
     final headers = <String, String>{
       'Accept': 'application/json',
@@ -251,7 +283,7 @@ class AuthApi {
     try {
       final response = await _client
           .send(_request(method, uri, headers, json))
-          .timeout(const Duration(seconds: 20));
+          .timeout(timeout ?? const Duration(seconds: 20));
       final text = await response.stream.bytesToString();
       return _decode(response.statusCode, text, allowEmpty: allowEmpty);
     } on ApiException {
@@ -260,18 +292,25 @@ class AuthApi {
       throw const ApiException(
         statusCode: 0,
         code: 'NETWORK',
-        message: 'The hospital service did not respond. Check your connection and try again.',
+        message:
+            'The hospital service did not respond. Check your connection and try again.',
       );
     } on http.ClientException {
       throw const ApiException(
         statusCode: 0,
         code: 'NETWORK',
-        message: 'The hospital service could not be reached. Check your connection and try again.',
+        message:
+            'The hospital service could not be reached. Check your connection and try again.',
       );
     }
   }
 
-  http.Request _request(String method, Uri uri, Map<String, String> headers, Map<String, dynamic>? json) {
+  http.Request _request(
+    String method,
+    Uri uri,
+    Map<String, String> headers,
+    Map<String, dynamic>? json,
+  ) {
     final request = http.Request(method, uri);
     request.headers.addAll(headers);
     if (json != null) {
@@ -280,7 +319,11 @@ class AuthApi {
     return request;
   }
 
-  Map<String, dynamic> _decode(int statusCode, String text, {required bool allowEmpty}) {
+  Map<String, dynamic> _decode(
+    int statusCode,
+    String text, {
+    required bool allowEmpty,
+  }) {
     if (statusCode == 204 || (allowEmpty && text.isEmpty && statusCode < 400)) {
       return {};
     }
@@ -302,7 +345,8 @@ class AuthApi {
       throw ApiException(
         statusCode: statusCode,
         code: map['code']?.toString() ?? 'REQUEST_ERROR',
-        message: map['message']?.toString() ?? 'The request could not be completed.',
+        message:
+            map['message']?.toString() ?? 'The request could not be completed.',
         fields: _fields(map['fields']),
         retryAfter: retry is num ? retry.toInt() : null,
       );
@@ -316,7 +360,9 @@ class AuthApi {
     }
     final fields = <String, String>{};
     value.forEach((key, item) {
-      final text = item is List && item.isNotEmpty ? item.first.toString() : item?.toString() ?? '';
+      final text = item is List && item.isNotEmpty
+          ? item.first.toString()
+          : item?.toString() ?? '';
       if (text.isNotEmpty) {
         fields[key.toString()] = text;
       }

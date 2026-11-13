@@ -92,7 +92,9 @@ class BookingOptions {
     final slots = json['time_slots'];
     final services = json['services'];
     return BookingOptions(
-      doctor: doctor is Map ? ConsultationDoctor.fromJson(Map<String, dynamic>.from(doctor)) : null,
+      doctor: doctor is Map
+          ? ConsultationDoctor.fromJson(Map<String, dynamic>.from(doctor))
+          : null,
       timeSlots: [
         if (slots is List)
           for (final slot in slots) slot.toString(),
@@ -100,7 +102,8 @@ class BookingOptions {
       services: [
         if (services is List)
           for (final item in services)
-            if (item is Map) CatalogueService.fromJson(Map<String, dynamic>.from(item)),
+            if (item is Map)
+              CatalogueService.fromJson(Map<String, dynamic>.from(item)),
       ],
     );
   }
@@ -108,8 +111,8 @@ class BookingOptions {
 
 class BookingApi {
   BookingApi({http.Client? client, String? baseUrl})
-      : _injected = client,
-        baseUrl = baseUrl ?? AppConfig.apiBaseUrl;
+    : _injected = client,
+      baseUrl = baseUrl ?? AppConfig.apiBaseUrl;
 
   final http.Client? _injected;
   http.Client? _owned;
@@ -118,7 +121,9 @@ class BookingApi {
   http.Client get _client => _injected ?? (_owned ??= http.Client());
 
   Future<BookingOptions> options(String access) async {
-    return BookingOptions.fromJson(await _send('GET', '/booking-options/', access: access));
+    return BookingOptions.fromJson(
+      await _send('GET', '/booking-options/', access: access),
+    );
   }
 
   Future<List<BookingSummary>> list(String access) async {
@@ -129,7 +134,8 @@ class BookingApi {
     }
     return [
       for (final item in results)
-        if (item is Map) BookingSummary.fromJson(Map<String, dynamic>.from(item)),
+        if (item is Map)
+          BookingSummary.fromJson(Map<String, dynamic>.from(item)),
     ];
   }
 
@@ -158,7 +164,11 @@ class BookingApi {
     return BookingSummary.fromJson(body);
   }
 
-  Future<BookingSummary> requestCancellation(String access, String bookingId, {String? reason}) async {
+  Future<BookingSummary> requestCancellation(
+    String access,
+    String bookingId, {
+    String? reason,
+  }) async {
     final body = await _send(
       'POST',
       '/bookings/$bookingId/cancellation-requests/',
@@ -191,7 +201,9 @@ class BookingApi {
       request.body = jsonEncode(json);
     }
     try {
-      final response = await _client.send(request).timeout(const Duration(seconds: 20));
+      final response = await _client
+          .send(request)
+          .timeout(const Duration(seconds: 20));
       final text = await response.stream.bytesToString();
       return _decode(response.statusCode, text);
     } on ApiException {
@@ -200,13 +212,15 @@ class BookingApi {
       throw const ApiException(
         statusCode: 0,
         code: 'NETWORK',
-        message: 'The hospital service did not respond. Check your connection and try again.',
+        message:
+            'The hospital service did not respond. Check your connection and try again.',
       );
     } on http.ClientException {
       throw const ApiException(
         statusCode: 0,
         code: 'NETWORK',
-        message: 'The hospital service could not be reached. Check your connection and try again.',
+        message:
+            'The hospital service could not be reached. Check your connection and try again.',
       );
     }
   }
@@ -222,14 +236,19 @@ class BookingApi {
         message: 'The hospital service sent an unexpected response.',
       );
     }
-    final body = decoded is Map ? Map<String, dynamic>.from(decoded) : <String, dynamic>{};
+    final body = decoded is Map
+        ? Map<String, dynamic>.from(decoded)
+        : <String, dynamic>{};
     if (statusCode >= 400) {
       final error = body['error'];
-      final map = error is Map ? Map<String, dynamic>.from(error) : <String, dynamic>{};
+      final map = error is Map
+          ? Map<String, dynamic>.from(error)
+          : <String, dynamic>{};
       throw ApiException(
         statusCode: statusCode,
         code: map['code']?.toString() ?? 'REQUEST_ERROR',
-        message: map['message']?.toString() ?? 'The request could not be completed.',
+        message:
+            map['message']?.toString() ?? 'The request could not be completed.',
         fields: _fields(map['fields']),
       );
     }
@@ -242,7 +261,9 @@ class BookingApi {
     }
     final fields = <String, String>{};
     raw.forEach((key, value) {
-      final text = value is List && value.isNotEmpty ? value.first.toString() : value?.toString() ?? '';
+      final text = value is List && value.isNotEmpty
+          ? value.first.toString()
+          : value?.toString() ?? '';
       if (text.isNotEmpty) {
         fields[key.toString()] = text;
       }

@@ -60,7 +60,8 @@ class CatalogueDoctor {
       departments: [
         if (links is List)
           for (final item in links)
-            if (item is Map) CatalogueDepartmentLink.fromJson(Map<String, dynamic>.from(item)),
+            if (item is Map)
+              CatalogueDepartmentLink.fromJson(Map<String, dynamic>.from(item)),
       ],
     );
   }
@@ -117,8 +118,8 @@ class CatalogueService {
 
 class CatalogueApi {
   CatalogueApi({http.Client? client, String? baseUrl})
-      : _injected = client,
-        baseUrl = baseUrl ?? AppConfig.apiBaseUrl;
+    : _injected = client,
+      baseUrl = baseUrl ?? AppConfig.apiBaseUrl;
 
   final http.Client? _injected;
   http.Client? _owned;
@@ -126,13 +127,20 @@ class CatalogueApi {
 
   http.Client get _client => _injected ?? (_owned ??= http.Client());
 
-  Future<List<CatalogueDepartment>> departments(String access, {String search = ''}) async {
+  Future<List<CatalogueDepartment>> departments(
+    String access, {
+    String search = '',
+  }) async {
     final body = await _get('/departments/', access, {'search': search});
-    return [for (final item in _results(body)) CatalogueDepartment.fromJson(item)];
+    return [
+      for (final item in _results(body)) CatalogueDepartment.fromJson(item),
+    ];
   }
 
   Future<CatalogueDepartment> department(String access, String id) async {
-    return CatalogueDepartment.fromJson(await _get('/departments/$id/', access, const {}));
+    return CatalogueDepartment.fromJson(
+      await _get('/departments/$id/', access, const {}),
+    );
   }
 
   Future<List<CatalogueDoctor>> doctors(
@@ -140,12 +148,17 @@ class CatalogueApi {
     String search = '',
     String department = '',
   }) async {
-    final body = await _get('/doctors/', access, {'search': search, 'department': department});
+    final body = await _get('/doctors/', access, {
+      'search': search,
+      'department': department,
+    });
     return [for (final item in _results(body)) CatalogueDoctor.fromJson(item)];
   }
 
   Future<CatalogueDoctor> doctor(String access, String id) async {
-    return CatalogueDoctor.fromJson(await _get('/doctors/$id/', access, const {}));
+    return CatalogueDoctor.fromJson(
+      await _get('/doctors/$id/', access, const {}),
+    );
   }
 
   Future<List<CatalogueService>> services(
@@ -153,23 +166,40 @@ class CatalogueApi {
     String search = '',
     String serviceType = '',
   }) async {
-    final body = await _get('/services/', access, {'search': search, 'service_type': serviceType});
+    final body = await _get('/services/', access, {
+      'search': search,
+      'service_type': serviceType,
+    });
     return [for (final item in _results(body)) CatalogueService.fromJson(item)];
   }
 
   Future<CatalogueService> service(String access, String id) async {
-    return CatalogueService.fromJson(await _get('/services/$id/', access, const {}));
+    return CatalogueService.fromJson(
+      await _get('/services/$id/', access, const {}),
+    );
   }
 
-  Future<Map<String, dynamic>> _get(String path, String access, Map<String, String> query) async {
+  Future<Map<String, dynamic>> _get(
+    String path,
+    String access,
+    Map<String, String> query,
+  ) async {
     final params = {
       for (final entry in query.entries)
         if (entry.value.trim().isNotEmpty) entry.key: entry.value.trim(),
     };
-    final uri = Uri.parse('$baseUrl$path').replace(queryParameters: params.isEmpty ? null : params);
+    final uri = Uri.parse(
+      '$baseUrl$path',
+    ).replace(queryParameters: params.isEmpty ? null : params);
     try {
       final response = await _client
-          .get(uri, headers: {'Accept': 'application/json', 'Authorization': 'Bearer $access'})
+          .get(
+            uri,
+            headers: {
+              'Accept': 'application/json',
+              'Authorization': 'Bearer $access',
+            },
+          )
           .timeout(const Duration(seconds: 20));
       return _decode(response.statusCode, response.body);
     } on ApiException {
@@ -178,13 +208,15 @@ class CatalogueApi {
       throw const ApiException(
         statusCode: 0,
         code: 'NETWORK',
-        message: 'The hospital service did not respond. Check your connection and try again.',
+        message:
+            'The hospital service did not respond. Check your connection and try again.',
       );
     } on http.ClientException {
       throw const ApiException(
         statusCode: 0,
         code: 'NETWORK',
-        message: 'The hospital service could not be reached. Check your connection and try again.',
+        message:
+            'The hospital service could not be reached. Check your connection and try again.',
       );
     }
   }
@@ -200,14 +232,19 @@ class CatalogueApi {
         message: 'The hospital service sent an unexpected response.',
       );
     }
-    final body = decoded is Map ? Map<String, dynamic>.from(decoded) : <String, dynamic>{};
+    final body = decoded is Map
+        ? Map<String, dynamic>.from(decoded)
+        : <String, dynamic>{};
     if (statusCode >= 400) {
       final error = body['error'];
-      final map = error is Map ? Map<String, dynamic>.from(error) : <String, dynamic>{};
+      final map = error is Map
+          ? Map<String, dynamic>.from(error)
+          : <String, dynamic>{};
       throw ApiException(
         statusCode: statusCode,
         code: map['code']?.toString() ?? 'REQUEST_ERROR',
-        message: map['message']?.toString() ?? 'The request could not be completed.',
+        message:
+            map['message']?.toString() ?? 'The request could not be completed.',
       );
     }
     return body;

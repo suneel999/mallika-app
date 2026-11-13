@@ -28,7 +28,7 @@ class MemoryTokenStore implements TokenStore {
 
 class SecureTokenStore implements TokenStore {
   SecureTokenStore({FlutterSecureStorage? storage})
-      : _storage = storage ?? const FlutterSecureStorage();
+    : _storage = storage ?? const FlutterSecureStorage();
 
   final FlutterSecureStorage _storage;
 
@@ -39,5 +39,6 @@ class SecureTokenStore implements TokenStore {
   Future<String?> read(String key) => _storage.read(key: key);
 
   @override
-  Future<void> write(String key, String value) => _storage.write(key: key, value: value);
+  Future<void> write(String key, String value) =>
+      _storage.write(key: key, value: value);
 }

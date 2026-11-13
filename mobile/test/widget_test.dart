@@ -14,46 +14,130 @@ import 'package:mallika_hospitals/features/profile/family_member_screen.dart';
 
 void main() {
   testWidgets('shows the Stitch home screen', (tester) async {
-    await tester.pumpWidget(MallikaApp(session: SessionController.preview(Gate.ready)));
+    await tester.pumpWidget(
+      MallikaApp(session: SessionController.preview(Gate.ready)),
+    );
 
-    expect(find.text('MALLIKA HOSPITALS'), findsOneWidget);
-    expect(find.text('Our Medical Services'), findsOneWidget);
-    expect(find.text('Book Appointment'), findsOneWidget);
-    expect(find.text('Call Now'), findsOneWidget);
-    expect(find.text('7 Dedicated Wings'), findsOneWidget);
+    expect(find.text('MALLIKA HOSPITALS'), findsNothing);
+    expect(find.byIcon(Icons.notifications_none), findsNothing);
+    expect(find.bySemanticsLabel('Book Your Consultation'), findsOneWidget);
+    expect(find.bySemanticsLabel('Open in Google Maps'), findsOneWidget);
+    expect(find.byIcon(Icons.person), findsWidgets);
+    for (final title in [
+      'Book Consultation',
+      '4D Echo',
+      'CT Calcium',
+      'CT Angio',
+      'Lab Tests',
+      'Ambulance',
+    ]) {
+      expect(find.bySemanticsLabel(title), findsOneWidget);
+    }
+    expect(find.text('Services'), findsOneWidget);
+    expect(find.text('Book for Family'), findsNothing);
+    expect(find.text('SOS Call'), findsOneWidget);
+    expect(find.textContaining('40%'), findsNothing);
+
+    await tester.tap(find.byIcon(Icons.person).first);
+    await tester.pumpAndSettle();
+    expect(find.text('Home'), findsOneWidget);
+    expect(find.text('Mobile Number'), findsOneWidget);
+    expect(find.text('Add family member'), findsOneWidget);
   });
 
-  testWidgets('book appointment asks for a date and time with the one doctor', (tester) async {
-    final session = await _signedIn(api: _LinkedProfiles(), bookings: _ConsultationOptions());
+  testWidgets('service cards stay two per row on every phone width', (
+    tester,
+  ) async {
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    const titles = [
+      'Book Consultation',
+      '4D Echo',
+      'CT Calcium',
+      'CT Angio',
+      'Lab Tests',
+      'Ambulance',
+    ];
+    for (final width in [320.0, 360.0, 390.0, 430.0, 600.0]) {
+      await tester.binding.setSurfaceSize(Size(width, 900));
+      await tester.pumpWidget(
+        MallikaApp(session: SessionController.preview(Gate.ready)),
+      );
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+
+      final rects = [
+        for (final title in titles)
+          tester.getRect(find.bySemanticsLabel(title)),
+      ];
+      expect(rects, hasLength(6));
+      final banner = tester.getRect(
+        find.bySemanticsLabel('Book Your Consultation'),
+      );
+      expect(banner.width, closeTo(rects[1].right - rects[0].left, 1));
+      expect(banner.height, closeTo(banner.width * 9 / 16, 1.5));
+      for (var row = 0; row < 3; row++) {
+        final left = rects[row * 2];
+        final right = rects[row * 2 + 1];
+        expect(left.top, right.top);
+        expect(left.width, right.width);
+        expect(left.height, left.width);
+        expect(right.height, right.width);
+        expect(left.right, lessThan(right.left));
+        expect(right.right - left.left, closeTo(width - 32, 1));
+        if (row > 0) {
+          expect(left.left, rects[0].left);
+          expect(right.left, rects[1].left);
+          expect(left.top, greaterThan(rects[row * 2 - 2].bottom));
+        }
+      }
+    }
+  });
+
+  testWidgets('book appointment asks for a date and time with the one doctor', (
+    tester,
+  ) async {
+    final session = await _signedIn(
+      api: _LinkedProfiles(),
+      bookings: _ConsultationOptions(),
+    );
     await _open(tester, MallikaApp(session: session));
     await tester.pumpAndSettle();
 
-    expect(find.text('Hospital Doctor'), findsOneWidget);
     expect(find.text('Dr. K. Srinivas Rao'), findsNothing);
 
-    await tester.tap(find.text('Book Appointment'));
+    await tester.tap(find.bySemanticsLabel('Book Your Consultation'));
     await tester.pumpAndSettle();
+
+    expect(find.text('Hospital Doctor'), findsOneWidget);
 
     expect(find.text('Choose a time'), findsOneWidget);
     expect(find.text('10:00'), findsOneWidget);
     expect(find.text('Departments'), findsNothing);
   });
 
-  testWidgets('the request form lists linked family members', (tester) async {
-    final session = await _signedIn(api: _LinkedProfiles(), bookings: _ConsultationOptions());
+  testWidgets('the request form books for the signed-in patient only', (
+    tester,
+  ) async {
+    final session = await _signedIn(
+      api: _LinkedProfiles(),
+      bookings: _ConsultationOptions(),
+    );
     await _open(
       tester,
-      MaterialApp(home: BookingRequestScreen(session: session, consultation: true)),
+      MaterialApp(
+        home: BookingRequestScreen(session: session, consultation: true),
+      ),
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Preview Patient'), findsOneWidget);
-    await tester.tap(find.byType(DropdownButtonFormField<String>));
-    await tester.pumpAndSettle();
-    expect(find.text('Arun Rao'), findsWidgets);
+    expect(find.text('Who is this for?'), findsNothing);
+    expect(find.text('Arun Rao'), findsNothing);
+    expect(find.text('Book for Family'), findsNothing);
   });
 
-  testWidgets('a home service tile opens published services by id', (tester) async {
+  testWidgets('a home service tile opens published services by id', (
+    tester,
+  ) async {
     final session = await _signedIn(
       api: _LinkedProfiles(),
       bookings: _ConsultationOptions(),
@@ -62,29 +146,60 @@ void main() {
     await _open(tester, MallikaApp(session: session));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('4D Echo'));
+    await tester.tap(find.bySemanticsLabel('4D Echo'));
     await tester.pumpAndSettle();
 
     expect(find.text('Heart checkup'), findsOneWidget);
-    expect(find.text('The hospital has not opened booking for this service yet.'), findsNothing);
+    expect(
+      find.text('The hospital has not opened booking for this service yet.'),
+      findsNothing,
+    );
 
     await tester.tap(find.text('Heart checkup'));
     await tester.pumpAndSettle();
     expect(find.text('Request service'), findsOneWidget);
-    expect(find.text('The hospital has not opened booking for this service yet.'), findsNothing);
+    expect(
+      find.text('The hospital has not opened booking for this service yet.'),
+      findsNothing,
+    );
   });
 
   testWidgets('bookings tab shows a pending request', (tester) async {
-    final session = SessionController.preview(Gate.ready, bookings: _CancellableBookings());
+    final session = SessionController.preview(
+      Gate.ready,
+      bookings: _CancellableBookings(),
+    );
     await session.tokens.write(TokenStore.accessKey, 'preview-access');
     await _open(tester, MallikaApp(session: session));
 
     await tester.tap(find.text('Bookings'));
     await tester.pumpAndSettle();
 
+    expect(find.text('Upcoming'), findsOneWidget);
+    expect(find.text('Completed'), findsOneWidget);
+    expect(find.text('Missed'), findsOneWidget);
+    expect(find.text('Home'), findsOneWidget);
     expect(find.text('MAL-BK-000001'), findsOneWidget);
     expect(find.text('Pending'), findsOneWidget);
 
+    await tester.tap(find.text('Completed'));
+    await tester.pumpAndSettle();
+    expect(
+      find.text('You have not booked any appointment yet.'),
+      findsOneWidget,
+    );
+    expect(find.byIcon(Icons.verified), findsOneWidget);
+
+    await tester.tap(find.text('Missed'));
+    await tester.pumpAndSettle();
+    expect(
+      find.text('You have not booked any appointment yet.'),
+      findsOneWidget,
+    );
+    expect(find.byIcon(Icons.event_busy), findsOneWidget);
+
+    await tester.tap(find.text('Upcoming'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Request cancellation'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Request cancellation').last);
@@ -104,17 +219,49 @@ void main() {
     await tester.tap(find.text('Updates'));
     await tester.pumpAndSettle();
 
+    expect(find.text('Home'), findsOneWidget);
     expect(find.text('The hospital confirmed MAL-BK-000001.'), findsOneWidget);
   });
 
   testWidgets('welcome leads to mobile number entry', (tester) async {
-    await _open(tester, MallikaApp(session: SessionController.preview(Gate.signedOut)));
+    await _open(
+      tester,
+      MallikaApp(session: SessionController.preview(Gate.signedOut)),
+    );
 
-    await tester.tap(find.text('Get Started'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Send OTP'));
+    expect(find.text('Patient Login'), findsOneWidget);
+    await tester.tap(find.text('Login'));
     await tester.pump();
     expect(find.text('Enter a 10-digit Indian mobile number.'), findsOneWidget);
+  });
+
+  testWidgets('the test number signs in when the server is down', (
+    tester,
+  ) async {
+    final session = SessionController(
+      api: _OfflineAuth(),
+      tokens: MemoryTokenStore(),
+    );
+    session.gate = Gate.signedOut;
+    await _open(tester, MallikaApp(session: session));
+
+    await tester.enterText(
+      find.byKey(const Key('mobile-number')),
+      '9999999999',
+    );
+    await tester.tap(find.byType(Checkbox));
+    await tester.pump();
+    await tester.tap(find.text('Login'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.text('Enter Verification Code'), findsOneWidget);
+    await tester.enterText(find.byKey(const Key('otp-code')), '123456');
+    await tester.tap(find.text('Verify'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.text('Hi Test'), findsOneWidget);
   });
 
   test('field errors are shown instead of the generic validation message', () {
@@ -127,7 +274,9 @@ void main() {
     expect(error.displayMessage, 'Enter a 10-digit Indian mobile number.');
   });
 
-  testWidgets('profile list updates when the session gains a family member', (tester) async {
+  testWidgets('profile list updates when the session gains a family member', (
+    tester,
+  ) async {
     final session = SessionController.preview(Gate.ready);
     session.profiles = [session.profile!];
     await tester.pumpWidget(MaterialApp(home: ProfileScreen(session: session)));
@@ -152,11 +301,15 @@ void main() {
     expect(find.text('Arun Rao'), findsOneWidget);
   });
 
-  testWidgets('family member form asks for a name and relationship', (tester) async {
+  testWidgets('family member form asks for a name and relationship', (
+    tester,
+  ) async {
     await _open(
       tester,
       MaterialApp(
-        home: FamilyMemberScreen(session: SessionController.preview(Gate.ready)),
+        home: FamilyMemberScreen(
+          session: SessionController.preview(Gate.ready),
+        ),
       ),
     );
 
@@ -166,9 +319,12 @@ void main() {
   });
 
   testWidgets('profile setup asks for a full name', (tester) async {
-    await _open(tester, MallikaApp(session: SessionController.preview(Gate.needsProfile)));
+    await _open(
+      tester,
+      MallikaApp(session: SessionController.preview(Gate.needsProfile)),
+    );
 
-    await tester.tap(find.text('Complete Setup'));
+    await tester.tap(find.text('Save and continue'));
     await tester.pump();
     expect(find.textContaining('full name'), findsOneWidget);
   });
@@ -199,6 +355,30 @@ Future<SessionController> _signedIn({
   );
   await session.tokens.write(TokenStore.accessKey, 'preview-access');
   return session;
+}
+
+class _OfflineAuth extends AuthApi {
+  @override
+  Future<OtpRequest> requestOtp(String mobileNumber, {Duration? timeout}) {
+    throw const ApiException(
+      statusCode: 0,
+      code: 'NETWORK',
+      message: 'The server did not connect.',
+    );
+  }
+
+  @override
+  Future<VerifiedSession> verifyOtp({
+    required String mobileNumber,
+    required String code,
+    Duration? timeout,
+  }) {
+    throw const ApiException(
+      statusCode: 0,
+      code: 'NETWORK',
+      message: 'The server did not connect.',
+    );
+  }
 }
 
 class _LinkedProfiles extends AuthApi {
@@ -237,7 +417,11 @@ class _HeartService extends CatalogueApi {
     String serviceType = '',
   }) async {
     return const [
-      CatalogueService(id: 'svc-1', name: 'Heart checkup', serviceType: 'health_checkup'),
+      CatalogueService(
+        id: 'svc-1',
+        name: 'Heart checkup',
+        serviceType: 'health_checkup',
+      ),
     ];
   }
 }
@@ -294,7 +478,11 @@ class _CancellableBookings extends BookingApi {
   }
 
   @override
-  Future<BookingSummary> requestCancellation(String access, String bookingId, {String? reason}) async {
+  Future<BookingSummary> requestCancellation(
+    String access,
+    String bookingId, {
+    String? reason,
+  }) async {
     return const BookingSummary(
       id: 'booking',
       reference: 'MAL-BK-000001',

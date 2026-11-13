@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../../app/theme.dart';
 import '../../core/api/api_exception.dart';
 import '../../core/api/auth_api.dart';
 import '../../core/phone.dart';
 import '../../core/session/session_controller.dart';
+import '../authentication/auth_chrome.dart';
 import '../shared/mallika_widgets.dart';
 
 const familyRelationships = <String, String>{
@@ -62,8 +62,14 @@ class _FamilyMemberScreenState extends State<FamilyMemberScreen> {
         title: const Text('Remove family member'),
         content: Text('Remove ${person.fullName} from your account?'),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Keep')),
-          TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Remove')),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Keep'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Remove'),
+          ),
         ],
       ),
     );
@@ -95,7 +101,10 @@ class _FamilyMemberScreenState extends State<FamilyMemberScreen> {
   Future<void> _save() async {
     final name = _name.text.trim();
     if (name.length < 2) {
-      setState(() => _error = 'Enter the full name as it appears on an identity document.');
+      setState(
+        () => _error =
+            'Enter the full name as it appears on an identity document.',
+      );
       return;
     }
     final relationship = _relationship;
@@ -144,58 +153,74 @@ class _FamilyMemberScreenState extends State<FamilyMemberScreen> {
     return Scaffold(
       backgroundColor: MallikaColors.background,
       appBar: AppBar(
-        title: Text(widget.person == null ? 'Add family member' : 'Edit family member'),
-        backgroundColor: MallikaColors.primary,
-        foregroundColor: Colors.white,
+        title: Text(
+          widget.person == null ? 'Add family member' : 'Edit family member',
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const Text(
-            'This person is saved on your account. You can request appointments for them.',
-            style: TextStyle(color: MallikaColors.onSurfaceVariant, height: 1.4),
-          ),
-          const SizedBox(height: 16),
-          const Text('Full name *', style: TextStyle(fontWeight: FontWeight.w600)),
-          const SizedBox(height: 8),
-          TextField(
-            key: const Key('family-full-name'),
-            controller: _name,
-            textCapitalization: TextCapitalization.words,
-            decoration: InputDecoration(
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: MallikaColors.tint,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  size: 18,
+                  color: MallikaColors.primary,
+                ),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'This person is saved on your account. You can request appointments for them.',
+                    style: TextStyle(
+                      color: MallikaColors.ink,
+                      fontSize: 13,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 16),
-          const Text('Relationship *', style: TextStyle(fontWeight: FontWeight.w600)),
-          const SizedBox(height: 8),
+          const SizedBox(height: 20),
+          AuthLabeledField(
+            label: 'Full name *',
+            child: TextField(
+              key: const Key('family-full-name'),
+              controller: _name,
+              textCapitalization: TextCapitalization.words,
+              decoration: authInputDecoration(
+                'As on an identity document',
+              ).copyWith(fillColor: Colors.white),
+            ),
+          ),
+          const SizedBox(height: 18),
+          const AuthLabeledField(
+            label: 'Relationship *',
+            child: SizedBox.shrink(),
+          ),
           Wrap(
             spacing: 8,
+            runSpacing: 8,
             children: [
               for (final entry in familyRelationships.entries)
-                ChoiceChip(
-                  label: Text(entry.value),
+                _RelationChip(
+                  label: entry.value,
                   selected: _relationship == entry.key,
-                  onSelected: (_) => setState(() => _relationship = entry.key),
+                  onTap: () => setState(() => _relationship = entry.key),
                 ),
             ],
           ),
-          const SizedBox(height: 16),
-          const Text('Mobile number (optional)', style: TextStyle(fontWeight: FontWeight.w600)),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _mobile,
-            keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)],
-            decoration: InputDecoration(
-              hintText: '10-digit Indian mobile',
-              prefixText: '+91  ',
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            ),
+          const SizedBox(height: 18),
+          AuthLabeledField(
+            label: 'Mobile number (optional)',
+            child: AuthMobileField(controller: _mobile),
           ),
           if (_error != null) ...[
             const SizedBox(height: 8),
@@ -203,7 +228,10 @@ class _FamilyMemberScreenState extends State<FamilyMemberScreen> {
           ],
           const SizedBox(height: 20),
           MallikaButton(
-            label: widget.person == null ? 'Save family member' : 'Save changes',
+            label: widget.person == null
+                ? 'Save family member'
+                : 'Save changes',
+            icon: Icons.check,
             busy: _busy,
             onPressed: _save,
           ),
@@ -211,10 +239,51 @@ class _FamilyMemberScreenState extends State<FamilyMemberScreen> {
             const SizedBox(height: 8),
             TextButton(
               onPressed: _busy ? null : _remove,
+              style: TextButton.styleFrom(foregroundColor: MallikaColors.error),
               child: const Text('Remove family member'),
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+class _RelationChip extends StatelessWidget {
+  const _RelationChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: selected ? MallikaColors.primary : Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: selected ? MallikaColors.primary : MallikaColors.outline,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: selected ? Colors.white : MallikaColors.ink,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
       ),
     );
   }

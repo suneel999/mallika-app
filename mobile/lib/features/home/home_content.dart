@@ -1,87 +1,83 @@
 import 'package:flutter/material.dart';
 
-// Emergency number, campus address, specialist names, the 40% offer,
-// and the "100,000+ families" line are unconfirmed Stitch copy.
-// Replace them with hospital-approved values before release.
+// Emergency number and the campus line come from the approved home design.
+// The grid is always two square cards wide.
 
-class MedicalService {
-  const MedicalService({
+enum HomeTap { book, services, call, map }
+
+class ClinicalCard {
+  const ClinicalCard({
     required this.title,
-    required this.subtitle,
-    required this.telugu,
-    required this.action,
+    required this.caption,
     required this.icon,
-    required this.urgent,
+    required this.color,
+    required this.tint,
+    required this.tap,
   });
 
   final String title;
-  final String subtitle;
-  final String telugu;
-  final String action;
+  final String caption;
   final IconData icon;
-  final bool urgent;
+
+  /// Colour of the icon tile and the faint icon in the corner.
+  final Color color;
+
+  /// Pale colour the card fades into.
+  final Color tint;
+  final HomeTap tap;
 }
 
-const medicalServices = <MedicalService>[
-  MedicalService(
-    title: 'Consultation',
-    subtitle: 'Consult our specialists',
-    telugu: 'స్పెషలిస్ట్ డాక్టర్లు',
-    action: 'Book Slot',
-    icon: Icons.medical_services_outlined,
-    urgent: false,
+const clinicalCards = <ClinicalCard>[
+  ClinicalCard(
+    title: 'Book Consultation',
+    caption: 'Request a visit',
+    icon: Icons.medical_services_rounded,
+    color: Color(0xFF0C1B5B),
+    tint: Color(0xFFDDE6FB),
+    tap: HomeTap.book,
   ),
-  MedicalService(
+  ClinicalCard(
     title: '4D Echo',
-    subtitle: 'Advanced heart imaging',
-    telugu: 'గుండె స్కానింగ్ పరీక్ష',
-    action: 'View Details',
-    icon: Icons.monitor_heart_outlined,
-    urgent: false,
+    caption: 'Heart ultrasound',
+    icon: Icons.monitor_heart_rounded,
+    color: Color(0xFF005DB7),
+    tint: Color(0xFFD9ECFF),
+    tap: HomeTap.services,
   ),
-  MedicalService(
-    title: 'CT Calcium Score',
-    subtitle: 'Assess heart health',
-    telugu: 'కాల్షియం స్కోర్ టెస్ట్',
-    action: 'Schedule',
-    icon: Icons.medical_information_outlined,
-    urgent: false,
+  ClinicalCard(
+    title: 'CT Calcium',
+    caption: 'Calcium score scan',
+    icon: Icons.blur_circular_rounded,
+    color: Color(0xFF0E7C86),
+    tint: Color(0xFFD7F3F2),
+    tap: HomeTap.services,
   ),
-  MedicalService(
-    title: 'CT Coronary Angiogram',
-    subtitle: 'Advanced coronary imaging',
-    telugu: 'యాంజియోగ్రామ్ వివరాలు',
-    action: 'Learn More',
-    icon: Icons.monitor_heart,
-    urgent: false,
+  ClinicalCard(
+    title: 'CT Angio',
+    caption: 'Coronary CT scan',
+    icon: Icons.favorite_rounded,
+    color: Color(0xFFC2255C),
+    tint: Color(0xFFFDE2EC),
+    tap: HomeTap.services,
   ),
-  MedicalService(
-    title: 'Emergency',
-    subtitle: '24x7 Immediate assistance • ICU & Trauma Care',
-    telugu: 'అత్యవసర చికిత్స విభాగం',
-    action: 'Call 24/7',
-    icon: Icons.emergency_outlined,
-    urgent: true,
+  ClinicalCard(
+    title: 'Lab Tests',
+    caption: 'Blood and other tests',
+    icon: Icons.science_rounded,
+    color: Color(0xFF6D3FC8),
+    tint: Color(0xFFEBE3FD),
+    tap: HomeTap.services,
   ),
-  MedicalService(
-    title: 'Lab Services',
-    subtitle: 'Diagnostic tests & blood work',
-    telugu: 'ల్యాబ్ & రక్త పరీక్షలు',
-    action: 'Book Home Test',
-    icon: Icons.science_outlined,
-    urgent: false,
-  ),
-  MedicalService(
+  ClinicalCard(
     title: 'Ambulance',
-    subtitle: 'Ambulance assistance',
-    telugu: 'అంబులెన్స్ సదుపాయం',
-    action: 'Dispatch / Call',
-    icon: Icons.airport_shuttle_outlined,
-    urgent: false,
+    caption: 'Call 108',
+    icon: Icons.emergency_rounded,
+    color: Color(0xFFD92D20),
+    tint: Color(0xFFFFE3E0),
+    tap: HomeTap.call,
   ),
 ];
 
 const emergencyPhoneUri = 'tel:108';
 
-const hospitalDirectionsQuery =
-    'Mallika Multi-Speciality Campus, Opp. Collectorate Road, Near Metro Junction';
+const hospitalMapsUri = 'https://maps.app.goo.gl/UGKJ3hgTcLZqGY4V9';

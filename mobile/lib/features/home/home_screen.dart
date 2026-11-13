@@ -1,700 +1,684 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/theme.dart';
 import '../../core/session/session_controller.dart';
-import '../../core/api/api_exception.dart';
-import '../../core/api/booking_api.dart';
 import '../bookings/booking_screens.dart';
-import '../updates/updates_screen.dart';
+import '../shared/mallika_widgets.dart';
 import 'home_content.dart';
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key, required this.session, this.onOpenProfile});
+  const HomeScreen({
+    super.key,
+    required this.session,
+    this.onOpenProfile,
+    this.onOpenBookings,
+  });
+
+  final SessionController session;
+  final VoidCallback? onOpenProfile;
+  final VoidCallback? onOpenBookings;
+
+  @override
+  Widget build(BuildContext context) {
+    final top = MediaQuery.paddingOf(context).top;
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
+      child: Scaffold(
+        backgroundColor: MallikaColors.background,
+        body: SingleChildScrollView(
+          child: Stack(
+            children: [
+              // Navy band behind the greeting and the top half of the banner.
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                height: top + 196,
+                child: const _HeaderBand(),
+              ),
+              Padding(
+                padding: EdgeInsets.fromLTRB(16, top + 14, 16, 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _GreetingBar(
+                      session: session,
+                      onOpenProfile: onOpenProfile,
+                    ),
+                    const SizedBox(height: 16),
+                    _ConsultationBanner(
+                      onTap: () =>
+                          _openRequest(context, session, consultation: true),
+                    ),
+                    if (onOpenBookings != null) ...[
+                      const SizedBox(height: 14),
+                      _AppointmentsRow(onTap: onOpenBookings!),
+                    ],
+                    const SizedBox(height: 22),
+                    const Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          'Services',
+                          style: TextStyle(
+                            fontFamily: 'Plus Jakarta Sans',
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            color: MallikaColors.primary,
+                          ),
+                        ),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Tap a card to request',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.end,
+                            style: TextStyle(
+                              color: MallikaColors.muted,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    _ServiceGrid(session: session),
+                    const SizedBox(height: 18),
+                    const _EmergencyStrip(),
+                    const SizedBox(height: 12),
+                    const _CampusCard(),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HeaderBand extends StatelessWidget {
+  const _HeaderBand();
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
+      child: DecoratedBox(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              MallikaColors.headerStart,
+              MallikaColors.primary,
+              MallikaColors.headerEnd,
+            ],
+          ),
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              right: -40,
+              top: -50,
+              child: _ring(170, const Color(0x14FFFFFF)),
+            ),
+            Positioned(
+              left: -60,
+              bottom: -90,
+              child: _ring(190, const Color(0x0FFFFFFF)),
+            ),
+            const Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: 3,
+              child: ColoredBox(color: MallikaColors.accent),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _ring(double size, Color color) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+    );
+  }
+}
+
+class _GreetingBar extends StatelessWidget {
+  const _GreetingBar({required this.session, this.onOpenProfile});
 
   final SessionController session;
   final VoidCallback? onOpenProfile;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: MallikaColors.background,
-      body: Column(
-        children: [
-          _HomeHeader(session: session),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-              children: [
-                _HeroBanner(session: session),
-                const SizedBox(height: 12),
-                const _OfferRow(),
-                const SizedBox(height: 16),
-                const _EmergencyRibbon(),
-                const SizedBox(height: 20),
-                _ServicesSection(session: session),
-                const SizedBox(height: 20),
-                _SpecialistsSection(session: session),
-                const SizedBox(height: 20),
-                const _FindHospitalCard(),
-                const SizedBox(height: 20),
-                const _TrustBanner(),
-              ],
+    final name = session.profile?.fullName.trim() ?? '';
+    final first = name.isEmpty ? '' : name.split(RegExp(r'\s+')).first;
+    final initial = first.isEmpty ? 'H' : first[0].toUpperCase();
+    return Row(
+      children: [
+        Container(
+          width: 44,
+          height: 44,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.white,
+            border: Border.all(color: MallikaColors.accent, width: 2),
+          ),
+          child: Text(
+            initial,
+            style: const TextStyle(
+              fontFamily: 'Plus Jakarta Sans',
+              color: MallikaColors.primary,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
             ),
           ),
-        ],
-      ),
-      bottomNavigationBar: _HomeBottomNav(session: session, onOpenProfile: onOpenProfile),
-    );
-  }
-}
-
-class _HomeHeader extends StatelessWidget {
-  const _HomeHeader({required this.session});
-
-  final SessionController session;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.fromLTRB(8, MediaQuery.paddingOf(context).top + 8, 8, 10),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            MallikaColors.headerStart,
-            MallikaColors.headerMid,
-            MallikaColors.headerEnd,
-          ],
         ),
-      ),
-      child: Row(
-        children: [
-          IconButton(
-            onPressed: () => _soon(context),
-            icon: const Icon(Icons.menu, color: Colors.white),
-            tooltip: 'Open Menu',
-          ),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'MALLIKA HOSPITALS',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.6,
-                    fontSize: 14,
-                  ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                first.isEmpty ? 'Hi' : 'Hi $first',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontFamily: 'Plus Jakarta Sans',
+                  fontSize: 19,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
                 ),
-                Text(
-                  'ఆపదలో మీ నేస్తం',
-                  style: TextStyle(
-                    color: MallikaColors.accent,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
+              ),
+              const SizedBox(height: 2),
+              const Text(
+                'How can we help you today?',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: MallikaColors.primaryFixed,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-          Material(
-            color: const Color(0xFF051737),
-            borderRadius: BorderRadius.circular(20),
+        ),
+        const SizedBox(width: 8),
+        Semantics(
+          button: true,
+          label: 'Profile',
+          child: Material(
+            color: const Color(0x26FFFFFF),
+            shape: const CircleBorder(),
             child: InkWell(
-              onTap: () => _soon(context),
-              borderRadius: BorderRadius.circular(20),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFF2B589A)),
-                ),
-                child: const Text.rich(
-                  TextSpan(
-                    children: [
-                      TextSpan(
-                        text: 'EN',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
-                      ),
-                      TextSpan(text: '  |  ', style: TextStyle(color: Colors.white54)),
-                      TextSpan(
-                        text: 'తెలుగు',
-                        style: TextStyle(
-                          color: MallikaColors.accent,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              customBorder: const CircleBorder(),
+              onTap: onOpenProfile,
+              child: const SizedBox(
+                width: 44,
+                height: 44,
+                child: Icon(Icons.person, color: Colors.white, size: 22),
               ),
             ),
           ),
-          IconButton(
-            onPressed: () => _openUpdates(context, session),
-            icon: const Icon(Icons.notifications_outlined, color: Colors.white),
-            tooltip: 'Notifications',
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
 
-class _HeroBanner extends StatelessWidget {
-  const _HeroBanner({required this.session});
+class _ConsultationBanner extends StatelessWidget {
+  const _ConsultationBanner({required this.onTap});
 
-  final SessionController session;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
+    return DecoratedBox(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        gradient: const LinearGradient(
-          colors: [Color(0xFF061E47), Color(0xFF092E66), Color(0xFF0C397B)],
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x330C1B5B),
+            blurRadius: 22,
+            offset: Offset(0, 12),
+          ),
+        ],
+      ),
+      child: Semantics(
+        button: true,
+        label: 'Book Your Consultation',
+        child: Material(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: onTap,
+            child: AspectRatio(
+              aspectRatio: 16 / 9,
+              child: Image.asset(
+                'assets/home/banner_consultation.jpg',
+                fit: BoxFit.cover,
+                excludeFromSemantics: true,
+              ),
+            ),
+          ),
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: MallikaColors.secondary,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Text(
-              'Excellence in Heart Care',
-              style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            'Advanced Cardiac Care for a Healthier Tomorrow',
-            style: Theme.of(context).textTheme.headlineMedium,
-          ),
-          const SizedBox(height: 6),
-          const Text(
-            'Expert Doctors • Cutting-edge Technology • Compassionate Care',
-            style: TextStyle(color: Color(0xFF80A8D3), fontSize: 12),
-          ),
-          const SizedBox(height: 14),
-          FilledButton.icon(
-            onPressed: () => _openRequest(context, session, consultation: true),
-            style: FilledButton.styleFrom(
-              backgroundColor: MallikaColors.accent,
-              foregroundColor: MallikaColors.headerStart,
-              minimumSize: const Size(0, 48),
-            ),
-            icon: const Text(
-              'Book Appointment',
-              style: TextStyle(fontWeight: FontWeight.w800),
-            ),
-            label: const Icon(Icons.arrow_forward),
-          ),
-        ],
-      ),
     );
   }
 }
 
-class _OfferRow extends StatelessWidget {
-  const _OfferRow();
+class _AppointmentsRow extends StatelessWidget {
+  const _AppointmentsRow({required this.onTap});
+
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return const SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          _OfferChip(
-            icon: Icons.health_and_safety,
-            label: 'Complete Heart Health Checkup @ 40% Off',
-            filled: true,
-          ),
-          SizedBox(width: 8),
-          _OfferChip(
-            icon: Icons.biotech_outlined,
-            label: 'Preventive Blood Screening Packages',
-            filled: false,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _OfferChip extends StatelessWidget {
-  const _OfferChip({required this.icon, required this.label, required this.filled});
-
-  final IconData icon;
-  final String label;
-  final bool filled;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      decoration: BoxDecoration(
-        color: filled ? MallikaColors.secondaryFixed : const Color(0xFFE5E8EC),
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 18, color: filled ? MallikaColors.secondary : MallikaColors.primary),
-          const SizedBox(width: 8),
-          Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-        ],
-      ),
-    );
-  }
-}
-
-class _EmergencyRibbon extends StatelessWidget {
-  const _EmergencyRibbon();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: MallikaColors.errorContainer,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: MallikaColors.error,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(Icons.emergency, color: Colors.white),
-          ),
-          const SizedBox(width: 12),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'EMERGENCY HOTLINE  24x7',
-                  style: TextStyle(
-                    color: MallikaColors.error,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 13,
-                  ),
-                ),
-                Text(
-                  'ఆపదలో అత్యవసరం: Instant Doctor & ICU',
-                  style: TextStyle(fontSize: 12),
-                ),
-              ],
-            ),
-          ),
-          FilledButton.icon(
-            onPressed: () => _open(context, Uri.parse(emergencyPhoneUri)),
-            style: FilledButton.styleFrom(
-              backgroundColor: MallikaColors.error,
-              foregroundColor: Colors.white,
-              minimumSize: const Size(0, 48),
-            ),
-            icon: const Icon(Icons.call),
-            label: const Text('Call Now'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ServicesSection extends StatelessWidget {
-  const _ServicesSection({required this.session});
-
-  final SessionController session;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
+    return Semantics(
+      button: true,
+      label: 'Your appointments',
+      excludeSemantics: true,
+      child: MallikaCard(
+        onTap: onTap,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        child: const Row(
           children: [
+            IconTile(
+              icon: Icons.event_note_rounded,
+              color: Colors.white,
+              background: MallikaColors.primary,
+            ),
+            SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Our Medical Services', style: Theme.of(context).textTheme.headlineSmall),
-                  const Text(
-                    'వైద్య సేవలు • Tap any service for details',
-                    style: TextStyle(color: MallikaColors.onSurfaceVariant, fontSize: 12),
+                  Text(
+                    'Your appointments',
+                    style: TextStyle(
+                      fontFamily: 'Plus Jakarta Sans',
+                      color: MallikaColors.ink,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    'Track requests and confirmed visits',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: MallikaColors.muted, fontSize: 12),
                   ),
                 ],
               ),
             ),
-            Text(
-              '${medicalServices.length} Dedicated Wings',
-              style: const TextStyle(
-                color: MallikaColors.secondary,
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
+            SizedBox(width: 8),
+            Icon(Icons.chevron_right, color: MallikaColors.muted),
           ],
         ),
-        const SizedBox(height: 12),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final cardWidth = (constraints.maxWidth - 12) / 2;
-            return Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: [
-                for (final service in medicalServices)
-                  SizedBox(
-                    width: service.urgent ? constraints.maxWidth : cardWidth,
-                    child: _ServiceCard(service: service, session: session),
-                  ),
-              ],
-            );
-          },
-        ),
-      ],
+      ),
     );
+  }
+}
+
+class _ServiceGrid extends StatelessWidget {
+  const _ServiceGrid({required this.session});
+
+  final SessionController session;
+
+  @override
+  Widget build(BuildContext context) {
+    const columns = 2;
+    const gap = 12.0;
+    final rows = <Widget>[];
+    for (var index = 0; index < clinicalCards.length; index += columns) {
+      final rowCards = clinicalCards.skip(index).take(columns).toList();
+      rows.add(
+        Padding(
+          padding: EdgeInsets.only(top: index == 0 ? 0 : gap),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (var column = 0; column < rowCards.length; column++) ...[
+                if (column > 0) const SizedBox(width: gap),
+                Expanded(
+                  child: AspectRatio(
+                    aspectRatio: 1,
+                    child: _ServiceCard(
+                      card: rowCards[column],
+                      onTap: () =>
+                          _tapService(context, session, rowCards[column].tap),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
+    }
+    return Column(children: rows);
   }
 }
 
 class _ServiceCard extends StatelessWidget {
-  const _ServiceCard({required this.service, required this.session});
+  const _ServiceCard({required this.card, required this.onTap});
 
-  final MedicalService service;
-  final SessionController session;
+  final ClinicalCard card;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final urgent = service.urgent;
-    return Material(
-      color: urgent ? MallikaColors.errorContainer : MallikaColors.surface,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () {
-          if (service.title == 'Emergency' || service.title == 'Ambulance') {
-            _open(context, Uri.parse(emergencyPhoneUri));
-            return;
-          }
-          if (service.title == 'Consultation') {
-            _openRequest(context, session, consultation: true);
-            return;
-          }
-          _openPublishedServices(context, session);
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+    return Semantics(
+      button: true,
+      label: card.title,
+      excludeSemantics: true,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: card.color.withValues(alpha: 0.14),
+              blurRadius: 16,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(color: card.color.withValues(alpha: 0.16)),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Ink(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Colors.white, card.tint],
+                stops: const [0.25, 1],
+              ),
+            ),
+            child: InkWell(
+              onTap: onTap,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final side = constraints.maxWidth;
+                  final pad = (side * 0.09).clamp(12.0, 20.0);
+                  final tileSize = (side * 0.32).clamp(42.0, 64.0);
+                  return Stack(
+                    children: [
+                      // Large faint copy of the icon in the corner.
+                      Positioned(
+                        right: -side * 0.12,
+                        bottom: -side * 0.12,
+                        child: Icon(
+                          card.icon,
+                          size: side * 0.62,
+                          color: card.color.withValues(alpha: 0.09),
+                        ),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.all(pad),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  width: tileSize,
+                                  height: tileSize,
+                                  decoration: BoxDecoration(
+                                    color: card.color,
+                                    borderRadius: BorderRadius.circular(
+                                      tileSize * 0.3,
+                                    ),
+                                  ),
+                                  child: Icon(
+                                    card.icon,
+                                    color: Colors.white,
+                                    size: tileSize * 0.54,
+                                  ),
+                                ),
+                                const Spacer(),
+                                Container(
+                                  width: 28,
+                                  height: 28,
+                                  decoration: const BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    Icons.arrow_outward_rounded,
+                                    size: 16,
+                                    color: card.color,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const Spacer(),
+                            Text(
+                              card.title,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontFamily: 'Plus Jakarta Sans',
+                                fontSize: side < 150 ? 14 : 16,
+                                height: 1.2,
+                                fontWeight: FontWeight.w800,
+                                color: MallikaColors.ink,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              card.caption,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: side < 150 ? 11 : 12.5,
+                                color: card.color,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EmergencyStrip extends StatelessWidget {
+  const _EmergencyStrip();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFD92D20), Color(0xFFB42318)],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x33D92D20),
+            blurRadius: 16,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          const CircleAvatar(
+            radius: 18,
+            backgroundColor: Color(0x33FFFFFF),
+            child: Icon(Icons.emergency_rounded, color: Colors.white, size: 20),
+          ),
+          const SizedBox(width: 10),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '24/7 Emergency & Trauma',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: 'Plus Jakarta Sans',
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 13.5,
+                    height: 1.2,
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'Immediate support for ICU on wheels',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: Color(0xFFFFE3E0), fontSize: 11.5),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          FilledButton.icon(
+            onPressed: () => _open(context, Uri.parse(emergencyPhoneUri)),
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: const Color(0xFFB42318),
+              minimumSize: const Size(0, 38),
+              visualDensity: VisualDensity.compact,
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+            ),
+            icon: const Icon(Icons.call, size: 15),
+            label: const Text(
+              'SOS Call',
+              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CampusCard extends StatelessWidget {
+  const _CampusCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: 'Open in Google Maps',
+      excludeSemantics: true,
+      child: MallikaCard(
+        onTap: () => _open(context, Uri.parse(hospitalMapsUri)),
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            const IconTile(
+              icon: Icons.location_on,
+              color: Colors.white,
+              background: MallikaColors.primary,
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: urgent ? MallikaColors.error : MallikaColors.primaryFixed,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      service.icon,
-                      color: urgent ? Colors.white : MallikaColors.primary,
+                  Text(
+                    'Mallika Hospitals',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: 'Plus Jakarta Sans',
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                      color: MallikaColors.ink,
                     ),
                   ),
-                  if (urgent) ...[
-                    const SizedBox(width: 8),
-                    const Text(
-                      'URGENT',
-                      style: TextStyle(
-                        color: MallikaColors.error,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 12,
-                      ),
+                  SizedBox(height: 2),
+                  Text(
+                    'Open in Google Maps',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: MallikaColors.secondary,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
                     ),
-                  ],
+                  ),
                 ],
               ),
-              const SizedBox(height: 10),
-              Text(
-                service.title,
-                style: TextStyle(
-                  color: urgent ? MallikaColors.error : MallikaColors.primary,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 16,
-                ),
+            ),
+            const SizedBox(width: 8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.asset(
+                'assets/home/photo_campus.png',
+                width: 76,
+                height: 54,
+                fit: BoxFit.cover,
+                alignment: Alignment.centerLeft,
               ),
-              Text(
-                service.subtitle,
-                style: const TextStyle(fontSize: 12, color: MallikaColors.onSurfaceVariant),
-              ),
-              Text(
-                service.telugu,
-                style: const TextStyle(fontSize: 11, color: Color(0xFF1D496F)),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                service.action,
-                style: TextStyle(
-                  color: urgent ? MallikaColors.error : MallikaColors.secondary,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-class _SpecialistsSection extends StatefulWidget {
-  const _SpecialistsSection({required this.session});
-
-  final SessionController session;
-
-  @override
-  State<_SpecialistsSection> createState() => _SpecialistsSectionState();
-}
-
-class _SpecialistsSectionState extends State<_SpecialistsSection> {
-  ConsultationDoctor? _doctor;
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  Future<void> _load() async {
-    try {
-      final options = await widget.session.loadBookingOptions();
-      if (mounted) {
-        setState(() => _doctor = options.doctor);
-      }
-    } on ApiException {
-      // The consultation card still opens the date and time form.
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final doctor = _doctor;
-    final photo = doctor?.photoUrl;
-    final hasPhoto = photo != null && photo.isNotEmpty;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Consultation', style: Theme.of(context).textTheme.headlineSmall),
-        const SizedBox(height: 12),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: MallikaColors.surface,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 36,
-                backgroundColor: MallikaColors.primaryFixed,
-                backgroundImage: hasPhoto ? NetworkImage(photo) : null,
-                child: hasPhoto ? null : const Icon(Icons.person, size: 36, color: MallikaColors.primary),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      doctor?.fullName ?? 'Consultation',
-                      style: const TextStyle(
-                        color: MallikaColors.primary,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 18,
-                      ),
-                    ),
-                    if ((doctor?.qualification ?? '').isNotEmpty)
-                      Text(
-                        doctor!.qualification!,
-                        style: const TextStyle(fontSize: 12, color: MallikaColors.onSurfaceVariant),
-                      ),
-                    const SizedBox(height: 4),
-                    const Text('Choose a date and a time. No department to pick.'),
-                    const SizedBox(height: 8),
-                    FilledButton(
-                      onPressed: () => _openRequest(context, widget.session, consultation: true),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: MallikaColors.primary,
-                        minimumSize: const Size.fromHeight(40),
-                      ),
-                      child: const Text('Book Consultation'),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
+void _tapService(BuildContext context, SessionController session, HomeTap tap) {
+  switch (tap) {
+    case HomeTap.book:
+      _openRequest(context, session, consultation: true);
+    case HomeTap.services:
+      _openPublishedServices(context, session);
+    case HomeTap.call:
+      _open(context, Uri.parse(emergencyPhoneUri));
+    case HomeTap.map:
+      _open(context, Uri.parse(hospitalMapsUri));
   }
 }
 
-class _FindHospitalCard extends StatelessWidget {
-  const _FindHospitalCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: MallikaColors.surface,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Find Mallika Hospitals', style: Theme.of(context).textTheme.headlineSmall),
-          const Text(
-            'ఆసుపత్రి చిరునామా మరియు దారి',
-            style: TextStyle(color: MallikaColors.onSurfaceVariant, fontSize: 12),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Mallika Multi-Speciality Campus',
-            style: TextStyle(fontWeight: FontWeight.w700),
-          ),
-          const Text('Opp. Collectorate Road, Near Metro Junction'),
-          const SizedBox(height: 12),
-          FilledButton.icon(
-            onPressed: () => _open(
-              context,
-              Uri.parse(
-                'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(hospitalDirectionsQuery)}',
-              ),
-            ),
-            style: FilledButton.styleFrom(
-              backgroundColor: MallikaColors.primaryContainer,
-              foregroundColor: Colors.white,
-              minimumSize: const Size.fromHeight(48),
-            ),
-            icon: const Icon(Icons.directions),
-            label: const Text('Get Directions'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TrustBanner extends StatelessWidget {
-  const _TrustBanner();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        gradient: const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFF071D49), Color(0xFF092B60), Color(0xFF071D49)],
-        ),
-      ),
-      child: const Column(
-        children: [
-          Text(
-            'ఆపదలో మీ నేస్తం',
-            style: TextStyle(
-              color: MallikaColors.accent,
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'Always by your side during critical emergencies. Trusted by over 100,000+ families for compassionate healthcare.',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white, fontSize: 14),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _HomeBottomNav extends StatelessWidget {
-  const _HomeBottomNav({required this.session, this.onOpenProfile});
-
-  final SessionController session;
-  final VoidCallback? onOpenProfile;
-
-  @override
-  Widget build(BuildContext context) {
-    return NavigationBar(
-      selectedIndex: 0,
-      backgroundColor: MallikaColors.surface,
-      indicatorColor: MallikaColors.secondaryFixed,
-      onDestinationSelected: (index) {
-        if (index == 1) {
-          Navigator.of(context).push(
-            MaterialPageRoute<void>(
-              builder: (_) => BookingListScreen(session: session),
-            ),
-          );
-          return;
-        }
-        if (index == 2) {
-          _openUpdates(context, session);
-          return;
-        }
-        if (index == 3 && onOpenProfile != null) {
-          onOpenProfile!();
-          return;
-        }
-        if (index != 0) {
-          _soon(context);
-        }
-      },
-      destinations: const [
-        NavigationDestination(icon: Icon(Icons.home_outlined), label: 'Home'),
-        NavigationDestination(icon: Icon(Icons.calendar_month_outlined), label: 'Bookings'),
-        NavigationDestination(icon: Icon(Icons.notifications_active_outlined), label: 'Updates'),
-        NavigationDestination(icon: Icon(Icons.person_outline), label: 'Profile'),
-      ],
-    );
-  }
-}
-
-void _openRequest(BuildContext context, SessionController session, {bool consultation = false}) {
+void _openRequest(
+  BuildContext context,
+  SessionController session, {
+  bool consultation = false,
+}) {
   Navigator.of(context).push(
     MaterialPageRoute<void>(
-      builder: (_) => BookingRequestScreen(session: session, consultation: consultation),
-    ),
-  );
-}
-
-void _openUpdates(BuildContext context, SessionController session) {
-  Navigator.of(context).push(
-    MaterialPageRoute<void>(
-      builder: (_) => UpdatesScreen(session: session),
+      builder: (_) =>
+          BookingRequestScreen(session: session, consultation: consultation),
     ),
   );
 }
@@ -704,12 +688,6 @@ void _openPublishedServices(BuildContext context, SessionController session) {
     MaterialPageRoute<void>(
       builder: (_) => PublishedServicesScreen(session: session),
     ),
-  );
-}
-
-void _soon(BuildContext context) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(content: Text('This screen is next.')),
   );
 }
 

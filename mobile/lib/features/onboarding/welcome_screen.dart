@@ -32,26 +32,43 @@ class WelcomeScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(999),
                   onTap: () => onLanguage(language == 'en' ? 'te' : 'en'),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.translate, size: 16, color: MallikaColors.secondary),
+                        const Icon(
+                          Icons.translate,
+                          size: 16,
+                          color: MallikaColors.secondary,
+                        ),
                         const SizedBox(width: 6),
                         Text(
                           'English',
                           style: TextStyle(
                             color: MallikaColors.secondary,
-                            fontWeight: language == 'en' ? FontWeight.w700 : FontWeight.w400,
+                            fontWeight: language == 'en'
+                                ? FontWeight.w700
+                                : FontWeight.w400,
                             fontSize: 12,
                           ),
                         ),
-                        const Text(' | ', style: TextStyle(color: MallikaColors.secondary, fontSize: 12)),
+                        const Text(
+                          ' | ',
+                          style: TextStyle(
+                            color: MallikaColors.secondary,
+                            fontSize: 12,
+                          ),
+                        ),
                         Text(
                           'తెలుగు',
                           style: TextStyle(
                             color: MallikaColors.secondary,
-                            fontWeight: language == 'te' ? FontWeight.w700 : FontWeight.w400,
+                            fontWeight: language == 'te'
+                                ? FontWeight.w700
+                                : FontWeight.w400,
                             fontSize: 12,
                           ),
                         ),
@@ -62,7 +79,11 @@ class WelcomeScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            const Icon(Icons.local_hospital, color: MallikaColors.primary, size: 48),
+            const Icon(
+              Icons.local_hospital,
+              color: MallikaColors.primary,
+              size: 48,
+            ),
             const SizedBox(height: 8),
             const Text(
               'Welcome to Mallika Hospitals',
@@ -102,7 +123,11 @@ class WelcomeScreen extends StatelessWidget {
                   colors: [MallikaColors.primaryFixed, Color(0xFFF1F4F8)],
                 ),
               ),
-              child: const Icon(Icons.health_and_safety_outlined, size: 72, color: MallikaColors.primary),
+              child: const Icon(
+                Icons.health_and_safety_outlined,
+                size: 72,
+                color: MallikaColors.primary,
+              ),
             ),
             const SizedBox(height: 20),
             Container(
@@ -116,7 +141,13 @@ class WelcomeScreen extends StatelessWidget {
                 children: [
                   Icon(Icons.verified, size: 14, color: MallikaColors.primary),
                   SizedBox(width: 4),
-                  Text('Trusted Healthcare Partner', style: TextStyle(fontSize: 11, color: MallikaColors.primary)),
+                  Text(
+                    'Trusted Healthcare Partner',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: MallikaColors.primary,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -133,7 +164,10 @@ class WelcomeScreen extends StatelessWidget {
             const SizedBox(height: 6),
             const Text(
               'Connect with hospital services, explore consultations and diagnostic tests, and submit appointment requests conveniently from your phone.',
-              style: TextStyle(color: MallikaColors.onSurfaceVariant, height: 1.4),
+              style: TextStyle(
+                color: MallikaColors.onSurfaceVariant,
+                height: 1.4,
+              ),
             ),
             const SizedBox(height: 12),
             const _Benefit(
@@ -162,7 +196,10 @@ class WelcomeScreen extends StatelessWidget {
                   children: [
                     TextSpan(
                       text: 'Log in',
-                      style: TextStyle(fontWeight: FontWeight.w700, decoration: TextDecoration.underline),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        decoration: TextDecoration.underline,
+                      ),
                     ),
                   ],
                 ),
@@ -172,9 +209,18 @@ class WelcomeScreen extends StatelessWidget {
               alignment: WrapAlignment.center,
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
-                TextButton(onPressed: () => showPendingPage(context), child: const Text('Privacy Policy')),
-                const Text('•', style: TextStyle(color: MallikaColors.onSurfaceVariant)),
-                TextButton(onPressed: () => showPendingPage(context), child: const Text('Terms of Use')),
+                TextButton(
+                  onPressed: () => showPendingPage(context),
+                  child: const Text('Privacy Policy'),
+                ),
+                const Text(
+                  '•',
+                  style: TextStyle(color: MallikaColors.onSurfaceVariant),
+                ),
+                TextButton(
+                  onPressed: () => showPendingPage(context),
+                  child: const Text('Terms of Use'),
+                ),
               ],
             ),
           ],
@@ -185,7 +231,11 @@ class WelcomeScreen extends StatelessWidget {
 }
 
 class _Benefit extends StatelessWidget {
-  const _Benefit({required this.icon, required this.title, required this.detail});
+  const _Benefit({
+    required this.icon,
+    required this.title,
+    required this.detail,
+  });
 
   final IconData icon;
   final String title;
@@ -216,8 +266,20 @@ class _Benefit extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.w600, color: MallikaColors.primary)),
-                Text(detail, style: const TextStyle(fontSize: 12, color: MallikaColors.onSurfaceVariant)),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: MallikaColors.primary,
+                  ),
+                ),
+                Text(
+                  detail,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: MallikaColors.onSurfaceVariant,
+                  ),
+                ),
               ],
             ),
           ),

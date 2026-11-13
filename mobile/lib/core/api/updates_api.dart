@@ -47,8 +47,8 @@ class HospitalBanner {
 
 class UpdatesApi {
   UpdatesApi({http.Client? client, String? baseUrl})
-      : _injected = client,
-        baseUrl = baseUrl ?? AppConfig.apiBaseUrl;
+    : _injected = client,
+      baseUrl = baseUrl ?? AppConfig.apiBaseUrl;
 
   final http.Client? _injected;
   http.Client? _owned;
@@ -71,7 +71,10 @@ class UpdatesApi {
       final response = await _client
           .get(
             Uri.parse('$baseUrl$path'),
-            headers: {'Accept': 'application/json', 'Authorization': 'Bearer $access'},
+            headers: {
+              'Accept': 'application/json',
+              'Authorization': 'Bearer $access',
+            },
           )
           .timeout(const Duration(seconds: 20));
       return _decode(response.statusCode, response.body);
@@ -81,13 +84,15 @@ class UpdatesApi {
       throw const ApiException(
         statusCode: 0,
         code: 'NETWORK',
-        message: 'The hospital service did not respond. Check your connection and try again.',
+        message:
+            'The hospital service did not respond. Check your connection and try again.',
       );
     } on http.ClientException {
       throw const ApiException(
         statusCode: 0,
         code: 'NETWORK',
-        message: 'The hospital service could not be reached. Check your connection and try again.',
+        message:
+            'The hospital service could not be reached. Check your connection and try again.',
       );
     }
   }
@@ -103,14 +108,19 @@ class UpdatesApi {
         message: 'The hospital service sent an unexpected response.',
       );
     }
-    final body = decoded is Map ? Map<String, dynamic>.from(decoded) : <String, dynamic>{};
+    final body = decoded is Map
+        ? Map<String, dynamic>.from(decoded)
+        : <String, dynamic>{};
     if (statusCode >= 400) {
       final error = body['error'];
-      final map = error is Map ? Map<String, dynamic>.from(error) : <String, dynamic>{};
+      final map = error is Map
+          ? Map<String, dynamic>.from(error)
+          : <String, dynamic>{};
       throw ApiException(
         statusCode: statusCode,
         code: map['code']?.toString() ?? 'REQUEST_ERROR',
-        message: map['message']?.toString() ?? 'The request could not be completed.',
+        message:
+            map['message']?.toString() ?? 'The request could not be completed.',
       );
     }
     return body;

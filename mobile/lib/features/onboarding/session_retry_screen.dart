@@ -19,8 +19,8 @@ class SessionRetryScreen extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.wifi_off, color: MallikaColors.primary, size: 48),
-              const SizedBox(height: 16),
+              const IconTile(icon: Icons.wifi_off_rounded, size: 88),
+              const SizedBox(height: 22),
               const Text(
                 'The hospital service could not be reached.',
                 textAlign: TextAlign.center,
@@ -29,16 +29,21 @@ class SessionRetryScreen extends StatelessWidget {
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
                   fontFamily: 'Plus Jakarta Sans',
+                  height: 1.3,
                 ),
               ),
               const SizedBox(height: 8),
               const Text(
                 'Your sign-in is still on this phone. Try again when the connection returns.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: MallikaColors.onSurfaceVariant, height: 1.4),
+                style: TextStyle(color: MallikaColors.muted, height: 1.4),
               ),
-              const SizedBox(height: 24),
-              MallikaButton(label: 'Retry', onPressed: session.boot),
+              const SizedBox(height: 26),
+              MallikaButton(
+                label: 'Retry',
+                icon: Icons.refresh,
+                onPressed: session.boot,
+              ),
             ],
           ),
         ),

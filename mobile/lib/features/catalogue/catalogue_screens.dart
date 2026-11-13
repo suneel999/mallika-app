@@ -9,7 +9,11 @@ import '../bookings/booking_screens.dart';
 enum CatalogueKind { departments, doctors, services }
 
 class CatalogueListScreen extends StatefulWidget {
-  const CatalogueListScreen({super.key, required this.session, required this.kind});
+  const CatalogueListScreen({
+    super.key,
+    required this.session,
+    required this.kind,
+  });
 
   final SessionController session;
   final CatalogueKind kind;
@@ -210,7 +214,8 @@ class _CatalogueListScreenState extends State<CatalogueListScreen> {
   void _open(CatalogueKind kind) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => CatalogueListScreen(session: widget.session, kind: kind),
+        builder: (_) =>
+            CatalogueListScreen(session: widget.session, kind: kind),
       ),
     );
   }
@@ -221,9 +226,15 @@ class _CatalogueListScreenState extends State<CatalogueListScreen> {
       case CatalogueKind.departments:
         page = DepartmentDetailScreen(department: _departments[index]);
       case CatalogueKind.doctors:
-        page = DoctorDetailScreen(session: widget.session, doctor: _doctors[index]);
+        page = DoctorDetailScreen(
+          session: widget.session,
+          doctor: _doctors[index],
+        );
       case CatalogueKind.services:
-        page = ServiceDetailScreen(session: widget.session, service: _services[index]);
+        page = ServiceDetailScreen(
+          session: widget.session,
+          service: _services[index],
+        );
     }
     Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page));
   }
@@ -244,7 +255,11 @@ class DepartmentDetailScreen extends StatelessWidget {
 }
 
 class DoctorDetailScreen extends StatelessWidget {
-  const DoctorDetailScreen({super.key, required this.session, required this.doctor});
+  const DoctorDetailScreen({
+    super.key,
+    required this.session,
+    required this.doctor,
+  });
 
   final SessionController session;
   final CatalogueDoctor doctor;
@@ -265,7 +280,8 @@ class DoctorDetailScreen extends StatelessWidget {
       onAction: () {
         Navigator.of(context).push(
           MaterialPageRoute<void>(
-            builder: (_) => BookingRequestScreen(session: session, consultation: true),
+            builder: (_) =>
+                BookingRequestScreen(session: session, consultation: true),
           ),
         );
       },
@@ -274,7 +290,11 @@ class DoctorDetailScreen extends StatelessWidget {
 }
 
 class ServiceDetailScreen extends StatelessWidget {
-  const ServiceDetailScreen({super.key, required this.session, required this.service});
+  const ServiceDetailScreen({
+    super.key,
+    required this.session,
+    required this.service,
+  });
 
   final SessionController session;
   final CatalogueService service;
@@ -286,14 +306,16 @@ class ServiceDetailScreen extends StatelessWidget {
       lines: [
         _serviceLabel(service.serviceType),
         if (service.description != null) service.description!,
-        if (service.preparationInstructions != null) service.preparationInstructions!,
+        if (service.preparationInstructions != null)
+          service.preparationInstructions!,
         'Fees are not shown here. Ask the hospital desk if you need a charge.',
       ],
       actionLabel: 'Request this service',
       onAction: () {
         Navigator.of(context).push(
           MaterialPageRoute<void>(
-            builder: (_) => BookingRequestScreen(session: session, service: service),
+            builder: (_) =>
+                BookingRequestScreen(session: session, service: service),
           ),
         );
       },
@@ -302,7 +324,12 @@ class ServiceDetailScreen extends StatelessWidget {
 }
 
 class _DetailScaffold extends StatelessWidget {
-  const _DetailScaffold({required this.title, required this.lines, this.actionLabel, this.onAction});
+  const _DetailScaffold({
+    required this.title,
+    required this.lines,
+    this.actionLabel,
+    this.onAction,
+  });
 
   final String title;
   final List<String> lines;
@@ -357,7 +384,10 @@ class _Message extends StatelessWidget {
             Text(text, textAlign: TextAlign.center),
             if (onRetry != null) ...[
               const SizedBox(height: 12),
-              OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
+              OutlinedButton(
+                onPressed: onRetry,
+                child: const Text('Try again'),
+              ),
             ],
           ],
         ),

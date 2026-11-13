@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../core/session/session_controller.dart';
 import '../features/authentication/sign_in_flow.dart';
-import '../features/home/home_screen.dart';
 import '../features/onboarding/session_retry_screen.dart';
 import '../features/onboarding/splash_screen.dart';
-import '../features/profile/profile_screen.dart';
 import '../features/profile/profile_setup_screen.dart';
+import '../features/shell/patient_shell.dart';
 
 class AppGate extends StatelessWidget {
   const AppGate({super.key, required this.session});
@@ -28,16 +27,7 @@ class AppGate extends StatelessWidget {
           case Gate.needsProfile:
             return ProfileSetupScreen(session: session);
           case Gate.ready:
-            return HomeScreen(
-              session: session,
-              onOpenProfile: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => ProfileScreen(session: session),
-                  ),
-                );
-              },
-            );
+            return PatientShell(session: session);
         }
       },
     );

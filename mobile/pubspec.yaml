@@ -56,6 +56,9 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
+  assets:
+    - assets/home/
+
   fonts:
     - family: Inter
       fonts:
