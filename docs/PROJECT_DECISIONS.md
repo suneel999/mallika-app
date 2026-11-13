@@ -30,6 +30,10 @@ This file records choices made while scaffolding, and conflicts that are not res
 19. Feature packages exist for onboarding, authentication, home, profile, catalogue, bookings, and updates. A booking status change is stored for the patient. Push and SMS are not sent.
 20. Django's built-in admin site is not mounted. Staff use the separate web dashboard.
 
+## Deployment, 13 November 2026
+
+The owner chose one EC2 server and one S3 bucket over the load balancer, Fargate, and RDS, because the app expects about 100 appointments and 200 patients. The name is `app.mallikahospitals.in`. The API and the reception desk share that name: `/api/` is the API and everything else is the desk. PostgreSQL runs on the same server, with a nightly dump to S3. A server failure means downtime until it is restored. The files are in `infra/`. The move has not been made.
+
 ## Recommended, not built
 
 The architecture document requires a responsive web dashboard and says that dashboard calls the same versioned REST API. It does not name a frontend framework. The recommendation is React with TypeScript, created with Vite, living in `admin/` and talking only to `/api/v1/`. That application is not generated until the recommendation is confirmed. Responsibilities and the setup step are in `admin/README.md`.
@@ -48,8 +52,12 @@ On 19 October 2026 the database and API document became the rule where the two d
 - OTP codes are hashed, expire quickly, and stop after a small number of attempts. The local API prints a code to its own stderr as the SMS stand-in. Production refuses that sender.
 - Cancellation and reconciliation routes, when built, follow the database document paths.
 - V1 booking is a request only. The patient pays at the hospital. The app shows no price and takes no payment.
+- This version books only for the signed-in patient. The home has no Book for Family control, and the request form does not ask who the visit is for. Family profiles can still be saved. Booking for a linked family member is a later version.
+- The patient booking list has three tabs. Upcoming holds `requested`, `under_review`, `confirmed`, and `cancellation_requested`. Completed holds `completed`. Missed holds `no_show`, `cancelled`, and `rejected`.
 - V1 has one consultation doctor. The patient sees that doctor's photo on consultation and chooses a date and a time. The app does not ask the patient to pick a department or a doctor. Department-wise doctors are a later version.
 - Other bookable services use the same date-and-time request. A service request does not ask for a doctor.
+- `GET /admin/dashboard/` returns booking counts by status for an optional requested-date range. Reports have no table of their own.
+- `GET /admin/audit-logs/` lists stored audit rows for staff and admin. Opening the list does not write another audit row.
 
 The table below keeps the original conflict wording.
 
@@ -73,7 +81,7 @@ These differences were not silently merged. The lock above is the current rule.
 | Reconciliation table ownership | Tables named `bookings_himsreconciliation` and `bookings_reconciliationevent` | Separate `reconciliation` module | The Django app is `reconciliation`. Physical table names are chosen with the models. |
 | Banner table name | `contentops_banner` | `content` module | The Django app is `content` and the table is `contentops_banner`. `image_url` stays empty until file storage exists. |
 
-Where an endpoint exists only in the database document (dashboard metrics, device registration, notification list, catalogue writes, audit search, staff management), that document is the API catalogue to implement later. The architecture document remains the source for module boundaries, patient experience, and the manual HIMS rule.
+Staff account management remains the endpoint from the database document that is not built. The architecture document remains the source for module boundaries, patient experience, and the manual HIMS rule.
 
 ## Assumptions
 
@@ -91,4 +99,4 @@ The patient UI source is the Stitch project `Mallika Hospitals Mobile App` (`pro
 
 ## Next schema phase
 
-Family links, catalogue tables, booking requests, staff review, patient cancellation, HIMS reconciliation, and in-app updates are in place. Consultation uses the one active doctor and a date and time. A service request uses a published service id. The patient app does not ask for a department or a doctor. Reconciliation status stays independent of booking status. A status change is stored for the patient and is not sent by push or SMS. The staff desk covers the booking queue, the hospital-system check, and catalogue editing. Reports and audit search are later. Do not add a second model for the same concept. Do not add prices, and do not confirm a booking automatically.
+Family links, catalogue tables, booking requests, staff review, patient cancellation, HIMS reconciliation, and in-app updates are in place. Consultation uses the one active doctor and a date and time. A service request uses a published service id. The patient app does not ask for a department or a doctor. Reconciliation status stays independent of booking status. A status change is stored for the patient and is not sent by push or SMS. The staff desk covers the booking queue, the hospital-system check, catalogue editing, patient search, booking counts, and the audit log. A search or correction is stored in the audit log. Do not add a second model for the same concept. Do not add prices, and do not confirm a booking automatically.

@@ -1,0 +1,24 @@
+# Caddy gets and renews the HTTPS certificate for this name by itself.
+# The name must already point at this server, and ports 80 and 443 must be open.
+{$SITE_DOMAIN} {
+	encode gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	# The patient app and the reception desk both call the API here.
+	handle /api/* {
+		reverse_proxy api:8000
+	}
+
+	# Everything else is the reception desk. Unknown paths open the desk itself.
+	handle {
+		root * /srv/desk
+		try_files {path} /index.html
+		file_server
+	}
+}

@@ -127,6 +127,17 @@ flutter test
 
 ## Next development phase
 
-Patient OTP, session, profiles, family members, catalogue reads, booking requests, staff review, the separate hospital-system check, in-app updates, and the staff desk are in place. Staff can publish the consultation doctor and bookable services. A request stays pending until staff confirm a time. Updates are stored for the patient and are not sent by push or SMS. Reports and audit search are later. Do not add prices or confirm bookings automatically.
+Patient OTP, session, profiles, family members, catalogue reads, booking requests, staff review, the separate hospital-system check, in-app updates, and the staff desk are in place. Staff can publish the consultation doctor and bookable services, search a patient profile, read booking counts, and read the audit log. A request stays pending until staff confirm a time. Updates are stored for the patient and are not sent by push or SMS. Each patient search is written to the audit log. Do not add prices or confirm bookings automatically.
+
+## Demo APK
+
+The release APK is signed with the debug key, so it can be installed for a demo and is not a Play Store build. The demo build accepts `123456` and does not send an SMS. If the phone cannot reach the API, that code still opens the app on the phone. Start the API with `python manage.py runserver 0.0.0.0:8000` when you want requests saved on this computer. Use demo settings for that process so the same code is accepted there too.
+
+```powershell
+cd mobile
+flutter build apk --dart-define=API_BASE_URL=http://192.168.1.130:8000/api/v1 --dart-define=DEMO_OTP=123456
+```
+
+Replace `192.168.1.20` with this computer's address. The APK is `mobile/build/app/outputs/flutter-apk/app-release.apk`. The phone and the computer need to be on the same network. Publish the consultation doctor from the desk before the consultation card shows a name. The home screen still shows the unconfirmed Stitch address, emergency number, and marketing lines.
 
 The original design documents in `docs/` remain the specification.
