@@ -21,9 +21,14 @@ if not os.environ.get("POSTGRES_PASSWORD", "").strip():
 
 require_sms_sender()
 
-SECURE_SSL_REDIRECT = True
-SECURE_HSTS_SECONDS = 31536000
-SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-SECURE_HSTS_PRELOAD = True
+# The first load balancer listens on HTTP. Set DJANGO_SSL_REDIRECT=true after the certificate exists.
+SECURE_SSL_REDIRECT = env_bool("DJANGO_SSL_REDIRECT", True)
+SECURE_REDIRECT_EXEMPT = [r"^api/v1/health/$"]
+if SECURE_SSL_REDIRECT:
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+else:
+    SECURE_HSTS_SECONDS = 0
 # The TLS-terminating proxy must overwrite X-Forwarded-Proto.
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")

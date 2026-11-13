@@ -9,5 +9,5 @@ def require_sms_sender() -> None:
     sender = os.environ.get("OTP_SENDER", "apps.accounts.senders.ConsoleOtpSender")
     if sender.endswith("ConsoleOtpSender"):
         raise ImproperlyConfigured(
-            "Set OTP_SENDER to the hospital SMS provider before using production settings."
+            "Set OTP_SENDER to the WhatsApp sender before using production settings."
         )

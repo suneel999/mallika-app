@@ -39,5 +39,13 @@ class BookingSerializer(serializers.ModelSerializer):
 
 
 class StaffBookingSerializer(BookingSerializer):
+    # Reception calls the patient from the booking, so the desk shows the number.
+    patient_number = serializers.CharField(source="patient_profile.patient_number", read_only=True)
+    patient_mobile_number = serializers.CharField(source="patient_profile.mobile_number", read_only=True)
+
     class Meta(BookingSerializer.Meta):
-        fields = BookingSerializer.Meta.fields + ["staff_note"]
+        fields = BookingSerializer.Meta.fields + [
+            "patient_number",
+            "patient_mobile_number",
+            "staff_note",
+        ]

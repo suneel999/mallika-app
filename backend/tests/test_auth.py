@@ -127,6 +127,23 @@ class OtpSessionTests(TestCase):
         self.assertEqual(again.status_code, 200, again.content)
         self.assertEqual(capped.status_code, 429)
 
+    @override_settings(OTP_DEMO_CODE="123456")
+    def test_demo_sign_in_accepts_the_fixed_code(self):
+        requested = self.client.post(
+            "/api/v1/auth/otp/request/",
+            {"mobile_number": "9876543210"},
+            format="json",
+        )
+        self.assertEqual(requested.status_code, 200, requested.content)
+        self.assertEqual(CapturingOtpSender.sent[-1][1], "123456")
+        self.assertNotIn("123456", requested.content.decode())
+        verified = self.client.post(
+            "/api/v1/auth/otp/verify/",
+            {"mobile_number": "9876543210", "code": "123456"},
+            format="json",
+        )
+        self.assertEqual(verified.status_code, 200, verified.content)
+
     def test_invalid_mobile_is_a_field_error(self):
         response = self.client.post(
             "/api/v1/auth/otp/request/",

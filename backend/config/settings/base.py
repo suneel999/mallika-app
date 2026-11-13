@@ -113,6 +113,10 @@ if not DEBUG:
     SECURE_CONTENT_TYPE_NOSNIFF = True
 
 OTP_SENDER = os.environ.get("OTP_SENDER", "apps.accounts.senders.ConsoleOtpSender")
+WHATSAPP_TOKEN = os.environ.get("WHATSAPP_TOKEN", "")
+WHATSAPP_PHONE_NUMBER_ID = os.environ.get("WHATSAPP_PHONE_NUMBER_ID", "")
+WHATSAPP_TEMPLATE = os.environ.get("WHATSAPP_TEMPLATE", "mallika_otp")
+WHATSAPP_GRAPH_VERSION = os.environ.get("WHATSAPP_GRAPH_VERSION", "v21.0")
 ACCESS_TOKEN_SECONDS = int(os.environ.get("ACCESS_TOKEN_SECONDS", "900"))
 REFRESH_TOKEN_DAYS = int(os.environ.get("REFRESH_TOKEN_DAYS", "30"))
 OTP_TTL_SECONDS = int(os.environ.get("OTP_TTL_SECONDS", "300"))

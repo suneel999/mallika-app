@@ -235,6 +235,11 @@ class StaffQueueTests(TestCase):
         queue = staff_client.get("/api/v1/admin/bookings/")
         self.assertEqual(queue.status_code, 200)
         self.assertEqual(queue.json()["count"], 1)
+        row = queue.json()["results"][0]
+        self.assertEqual(row["patient_mobile_number"], "+919876543210")
+        self.assertEqual(row["patient_number"], "MAL-PT-000001")
+        own = self.client.get("/api/v1/bookings/").json()["results"][0]
+        self.assertNotIn("patient_mobile_number", own)
         blocked = self.client.get("/api/v1/admin/bookings/")
         self.assertEqual(blocked.status_code, 403)
 
