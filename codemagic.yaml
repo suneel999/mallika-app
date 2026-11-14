@@ -1,0 +1,60 @@
+# Builds the patient app on Codemagic's Mac and uploads it to App Store Connect.
+# Start this workflow from the Codemagic site after the Apple key named "codemagic" is saved.
+# A tag such as ios-v1.0.0 starts the same workflow.
+workflows:
+  ios-app-store:
+    name: iOS App Store
+    max_build_duration: 90
+    instance_type: mac_mini_m2
+    working_directory: mobile
+    integrations:
+      app_store_connect: codemagic
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.mallikahospitals.mallikaHospitals
+      vars:
+        BUNDLE_ID: com.mallikahospitals.mallikaHospitals
+        API_BASE_URL: https://app.mallikahospitals.in/api/v1
+    triggering:
+      events:
+        - tag
+      tag_patterns:
+        - pattern: ios-v*
+          include: true
+    scripts:
+      - name: Set up the keychain
+        script: keychain initialize
+      - name: Fetch the App Store certificate
+        script: |
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_STORE \
+            --create
+      - name: Add the certificate to the keychain
+        script: keychain add-certificates
+      - name: Apply the provisioning profile
+        script: xcode-project use-profiles
+      - name: Get Flutter packages
+        script: flutter pub get
+      - name: Install CocoaPods
+        script: find . -name Podfile -execdir pod install \;
+      - name: Check the app
+        script: |
+          flutter analyze
+          flutter test
+      - name: Build the App Store package
+        script: |
+          flutter build ipa --release \
+            --dart-define=API_BASE_URL="$API_BASE_URL" \
+            --export-options-plist=/Users/builder/export_options.plist
+    artifacts:
+      - mobile/build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: false
+        submit_to_app_store: false
