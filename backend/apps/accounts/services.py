@@ -45,7 +45,13 @@ def request_otp(raw_mobile: str) -> dict:
             raise Throttled(wait=max(int(settings.OTP_RESEND_SECONDS - elapsed), 1))
 
     demo_code = str(getattr(settings, "OTP_DEMO_CODE", "") or "")
-    code = demo_code if len(demo_code) == 6 and demo_code.isdigit() else f"{secrets.randbelow(1_000_000):06d}"
+    review_code = _review_code_for(mobile)
+    if review_code is not None:
+        code = review_code
+    elif len(demo_code) == 6 and demo_code.isdigit():
+        code = demo_code
+    else:
+        code = f"{secrets.randbelow(1_000_000):06d}"
     with transaction.atomic():
         _consume_open_challenges(mobile, now)
         OtpChallenge.objects.create(
@@ -54,9 +60,29 @@ def request_otp(raw_mobile: str) -> dict:
             code_hash=make_password(code),
             expires_at=now + timedelta(seconds=settings.OTP_TTL_SECONDS),
         )
-    sender = import_string(settings.OTP_SENDER)()
-    sender.send(mobile, code)
+    if review_code is None:
+        sender = import_string(settings.OTP_SENDER)()
+        sender.send(mobile, code)
     return _otp_response(mobile)
+
+
+def _review_code_for(mobile: str):
+    """The fixed code for the one store-review number, or None.
+
+    App store reviewers cannot receive a WhatsApp code. When REVIEW_MOBILE and
+    REVIEW_OTP are both set, that one number signs in with that code and nothing
+    is sent. The limits on requests and wrong guesses still apply. Leave both
+    empty to switch this off.
+    """
+    raw_mobile = str(getattr(settings, "REVIEW_MOBILE", "") or "").strip()
+    code = str(getattr(settings, "REVIEW_OTP", "") or "").strip()
+    if not raw_mobile or len(code) != 6 or not code.isdigit():
+        return None
+    try:
+        review_mobile = normalize_indian_mobile(raw_mobile)
+    except ValueError:
+        return None
+    return code if mobile == review_mobile else None
 
 
 def verify_otp(raw_mobile: str, raw_code: str) -> dict:
@@ -122,7 +148,7 @@ def refresh_session(raw_token: str) -> dict:
     issued = None
     with transaction.atomic():
         session = (
-            RefreshSession.objects.select_for_update()
+            RefreshSession.objects.select_for_update(of=("self",))
             .filter(token_hash=_hash_token(token))
             .select_related("user")
             .first()

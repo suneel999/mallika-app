@@ -1,8 +1,8 @@
-"""Publish the consultation doctor and the one bookable service for launch.
+"""Publish the consultation doctor and the bookable services for launch.
 
 The hospital gave these on 14 November 2026. The command is safe to run again:
-it corrects the two rows and does not create a second copy. CT Calcium, CT Angio,
-and Lab Tests are shown as coming soon in the app and are not published here.
+it corrects the rows and does not create a second copy. Lab Tests is shown as
+coming soon in the app and is not published here.
 """
 
 from django.core.management.base import BaseCommand
@@ -12,11 +12,16 @@ from apps.catalogue.models import Doctor, Service, ServiceType
 
 DOCTOR_NAME = "Dr. J Mahesh Babu"
 DOCTOR_SPECIALTY = "Senior Cardiologist"
-ECHO_NAME = "4D Echo"
+# Name, short description, and position in the list.
+SERVICES = (
+    ("4D Echo", "Heart ultrasound", 1),
+    ("CT Calcium", "Calcium score scan", 2),
+    ("CT Angio", "Coronary CT scan", 3),
+)
 
 
 class Command(BaseCommand):
-    help = "Publish the consultation doctor and the 4D Echo service."
+    help = "Publish the consultation doctor and the bookable services."
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -40,15 +45,17 @@ class Command(BaseCommand):
         others = Doctor.objects.filter(is_active=True, display_order=0).exclude(pk=doctor.pk)
         moved = others.update(display_order=10)
 
-        echo = Service.objects.filter(name__iexact=ECHO_NAME).first()
-        if echo is None:
-            echo = Service(name=ECHO_NAME)
-        echo.service_type = ServiceType.DIAGNOSTICS
-        echo.description = "Heart ultrasound"
-        echo.is_active = True
-        echo.save()
+        for name, description, order in SERVICES:
+            service = Service.objects.filter(name__iexact=name).first()
+            if service is None:
+                service = Service(name=name)
+            service.service_type = ServiceType.DIAGNOSTICS
+            service.description = description
+            service.display_order = order
+            service.is_active = True
+            service.save()
 
         self.stdout.write(
             f"Consultation doctor: {doctor.full_name}, {doctor.specialty_summary}. "
-            f"Service: {echo.name}. Other doctors moved down: {moved}."
+            f"Services: {', '.join(name for name, _, _ in SERVICES)}. Other doctors moved down: {moved}."
         )

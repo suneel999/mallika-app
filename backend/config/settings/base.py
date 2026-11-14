@@ -123,6 +123,10 @@ OTP_TTL_SECONDS = int(os.environ.get("OTP_TTL_SECONDS", "300"))
 OTP_MAX_ATTEMPTS = int(os.environ.get("OTP_MAX_ATTEMPTS", "5"))
 OTP_RESEND_SECONDS = int(os.environ.get("OTP_RESEND_SECONDS", "60"))
 OTP_MAX_PER_HOUR = int(os.environ.get("OTP_MAX_PER_HOUR", "5"))
+# One number that app store reviewers sign in with, and its fixed 6-digit code.
+# Both empty means off.
+REVIEW_MOBILE = os.environ.get("REVIEW_MOBILE", "")
+REVIEW_OTP = os.environ.get("REVIEW_OTP", "")
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [

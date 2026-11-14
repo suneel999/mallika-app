@@ -19,6 +19,7 @@ The patient app calls `https://app.mallikahospitals.in/api/v1`. Reception opens 
 - `setup-server.sh` prepares a new server.
 - `backup.sh` saves the database to S3.
 - `set-whatsapp-token.ps1` puts a new WhatsApp token on the server from this computer.
+- `set-review-login.ps1` sets the number and code app store reviewers sign in with.
 
 The app is running on the server since 13 November 2026, with an empty database. HTTPS works on `https://app.mallikahospitals.in`. The old load balancer, Fargate service, and RDS database were deleted the same day; the snapshot `mallika-db-final-2026-11-13` is what remains of the old database. The code was sent as a bundle through the backup bucket (`deploy/app.tar.gz`), not with `git clone`, because it was not pushed yet. The nightly backup is scheduled and one backup was taken by hand. `docker compose config` accepts the compose file.
 
@@ -123,6 +124,7 @@ All server secrets are in one file on the server: `/home/ubuntu/mallika-app/infr
 | Value | What it is | When to change it |
 | --- | --- | --- |
 | `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID` | Sends sign-in codes through WhatsApp | When Meta rejects the token. On 13 November 2026 the stored token was rejected: the session was logged out. Use a System User token that does not expire |
+| `REVIEW_MOBILE`, `REVIEW_OTP` | The one number and fixed code app store reviewers sign in with. Nothing is sent to that number | Before each store submission, and switch it off when no review is running |
 | `DJANGO_SECRET_KEY` | Signs the API's tokens | Only if it leaks. Everyone has to sign in again |
 | `POSTGRES_PASSWORD` | The database password | Only if it leaks. Changing it here is not enough: the database user's password must be changed too |
 
@@ -133,6 +135,14 @@ powershell -File infra\set-whatsapp-token.ps1
 ```
 
 It asks for the token with hidden typing, puts it on the server, restarts the API, and says whether Meta accepts it. It has been checked for syntax only; it has not been run with a real token yet.
+
+To set or switch off the store reviewer login:
+
+```powershell
+powershell -File infra\set-review-login.ps1
+```
+
+It has been checked for syntax only; it has not been run yet. The app's own test number 9999999999 never reaches the server, so the review number must be a different one.
 
 To change any value by hand on the server:
 
@@ -151,6 +161,14 @@ docker compose exec api python manage.py createsuperuser
 ```
 
 It asks for the mobile number as `+91` and ten digits, then the password.
+
+## Testing before a release
+
+The usual test run uses SQLite, which ignores row locks. Run the tests on PostgreSQL inside the live image before every release. Django creates a separate \`test_mallika\` database and removes it afterwards; the live data is not touched:
+
+```bash
+docker compose exec api python manage.py test --settings=config.settings.test_postgres --noinput
+```
 
 ## Updating the app
 

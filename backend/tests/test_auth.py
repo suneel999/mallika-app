@@ -308,3 +308,45 @@ class OtpSessionTests(TestCase):
         )
         self.assertEqual(response.status_code, 200, response.content)
         return CapturingOtpSender.sent[-1][1]
+
+
+class StoreReviewLoginTests(TestCase):
+    def setUp(self):
+        CapturingOtpSender.reset()
+
+    def _sign_in(self, mobile, code):
+        client = APIClient()
+        asked = client.post("/api/v1/auth/otp/request/", {"mobile_number": mobile}, format="json")
+        self.assertEqual(asked.status_code, 200, asked.content)
+        return client.post("/api/v1/auth/otp/verify/", {"mobile_number": mobile, "code": code}, format="json")
+
+    def test_the_review_number_signs_in_with_its_code_and_nothing_is_sent(self):
+        with override_settings(REVIEW_MOBILE="9000000001", REVIEW_OTP="246810"):
+            wrong = self._sign_in("9000000001", "111111")
+            self.assertEqual(wrong.status_code, 401)
+            self.assertEqual(CapturingOtpSender.sent, [])
+        CapturingOtpSender.reset()
+        from apps.accounts.models import OtpChallenge
+
+        OtpChallenge.objects.all().delete()
+        with override_settings(REVIEW_MOBILE="9000000001", REVIEW_OTP="246810"):
+            right = self._sign_in("9000000001", "246810")
+            self.assertEqual(right.status_code, 200, right.content)
+            self.assertEqual(right.json()["user"]["user_kind"], "patient")
+            self.assertEqual(CapturingOtpSender.sent, [])
+
+    def test_other_numbers_and_an_unset_review_login_use_a_sent_code(self):
+        with override_settings(REVIEW_MOBILE="9000000001", REVIEW_OTP="246810"):
+            other = self._sign_in("9876500000", "246810")
+            self.assertEqual(other.status_code, 401)
+            self.assertEqual(len(CapturingOtpSender.sent), 1)
+        CapturingOtpSender.reset()
+        with override_settings(REVIEW_MOBILE="", REVIEW_OTP="246810"):
+            off = self._sign_in("9000000001", "246810")
+            self.assertEqual(off.status_code, 401)
+            self.assertEqual(len(CapturingOtpSender.sent), 1)
+        CapturingOtpSender.reset()
+        with override_settings(REVIEW_MOBILE="9000000002", REVIEW_OTP="12ab"):
+            bad = self._sign_in("9000000002", "12ab")
+            self.assertNotEqual(bad.status_code, 200)
+            self.assertEqual(len(CapturingOtpSender.sent), 1)

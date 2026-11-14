@@ -87,7 +87,7 @@ class CatalogueApiTests(TestCase):
 
 
 class LaunchCatalogueTests(TestCase):
-    def test_the_launch_command_publishes_one_doctor_and_4d_echo_once(self):
+    def test_the_launch_command_publishes_one_doctor_and_three_services_once(self):
         from django.core.management import call_command
 
         from apps.bookings.services import consultation_doctor
@@ -102,5 +102,6 @@ class LaunchCatalogueTests(TestCase):
         self.assertEqual(doctor.specialty_summary, "Senior Cardiologist")
         self.assertEqual(doctor.photo_url, "https://example.test/doctor.jpg")
         self.assertEqual(Doctor.objects.filter(full_name="Dr. J Mahesh Babu").count(), 1)
-        self.assertEqual(Service.objects.filter(name="4D Echo", is_active=True).count(), 1)
-        self.assertFalse(Service.objects.filter(name__icontains="CT").exists())
+        for name in ("4D Echo", "CT Calcium", "CT Angio"):
+            self.assertEqual(Service.objects.filter(name=name, is_active=True).count(), 1)
+        self.assertFalse(Service.objects.filter(name__icontains="Lab").exists())

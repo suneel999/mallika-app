@@ -122,6 +122,9 @@ def request_booking(user, data: dict, idempotency_key: str) -> tuple[Booking, bo
     return booking, True
 
 
+# Booking rows are locked with of=("self",): the doctor and the service are optional joins,
+# and PostgreSQL refuses FOR UPDATE on the optional side of a join. SQLite ignores the lock,
+# so only the PostgreSQL test run catches a mistake here.
 _STAFF_TRANSITIONS = {
     BookingStatus.REQUESTED: {BookingStatus.UNDER_REVIEW, BookingStatus.REJECTED},
     BookingStatus.UNDER_REVIEW: {BookingStatus.CONFIRMED, BookingStatus.REJECTED},
@@ -137,7 +140,7 @@ def request_cancellation(user, booking_id, reason) -> Booking:
     try:
         with transaction.atomic():
             booking = (
-                Booking.objects.select_for_update()
+                Booking.objects.select_for_update(of=("self",))
                 .select_related("patient_profile", "doctor", "service")
                 .filter(pk=booking_id, requested_by=user)
                 .first()
@@ -176,7 +179,7 @@ def review_booking(actor, booking_id, status, confirmed_for_raw, staff_note) -> 
     note = (staff_note or "").strip() or None
     with transaction.atomic():
         booking = (
-            Booking.objects.select_for_update()
+            Booking.objects.select_for_update(of=("self",))
             .select_related("patient_profile", "doctor", "service")
             .filter(pk=booking_id)
             .first()
