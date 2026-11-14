@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 // The grid is always two cards wide.
 
-enum HomeTap { book, echo, soon, call, map }
+enum HomeTap { book, service, soon, call, map }
 
 class ClinicalCard {
   const ClinicalCard({
@@ -12,6 +12,7 @@ class ClinicalCard {
     required this.color,
     required this.tap,
     this.photo,
+    this.serviceName,
   });
 
   final String title;
@@ -25,15 +26,15 @@ class ClinicalCard {
 
   /// A face shown beside the icon. Only the consultation card has one.
   final String? photo;
+
+  /// The published service this card requests, by its name on the server.
+  final String? serviceName;
 }
 
 /// The consultation doctor, given by the hospital. The request screen reads
 /// the published doctor from the server; this is what the home card shows.
 const consultationDoctorName = 'Dr. J Mahesh Babu';
 const consultationDoctorPhoto = 'assets/home/doctor_consultation.jpg';
-
-/// The name of the published service the 4D Echo card requests.
-const echoServiceName = '4D Echo';
 
 const clinicalCards = <ClinicalCard>[
   ClinicalCard(
@@ -49,21 +50,24 @@ const clinicalCards = <ClinicalCard>[
     caption: 'Heart ultrasound',
     icon: Icons.monitor_heart_rounded,
     color: Color(0xFF005DB7),
-    tap: HomeTap.echo,
+    tap: HomeTap.service,
+    serviceName: '4D Echo',
   ),
   ClinicalCard(
     title: 'CT Calcium',
     caption: 'Calcium score scan',
     icon: Icons.blur_circular_rounded,
     color: Color(0xFF0E7C86),
-    tap: HomeTap.soon,
+    tap: HomeTap.service,
+    serviceName: 'CT Calcium',
   ),
   ClinicalCard(
     title: 'CT Angio',
     caption: 'Coronary CT scan',
     icon: Icons.favorite_rounded,
     color: Color(0xFFC2255C),
-    tap: HomeTap.soon,
+    tap: HomeTap.service,
+    serviceName: 'CT Angio',
   ),
   ClinicalCard(
     title: 'Lab Tests',

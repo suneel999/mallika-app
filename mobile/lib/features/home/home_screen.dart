@@ -603,12 +603,12 @@ void _tapService(
   switch (card.tap) {
     case HomeTap.book:
       _openRequest(context, session, consultation: true);
-    case HomeTap.echo:
+    case HomeTap.service:
       Navigator.of(context).push(
         MaterialPageRoute<void>(
           builder: (_) => BookingRequestScreen(
             session: session,
-            serviceName: echoServiceName,
+            serviceName: card.serviceName,
           ),
         ),
       );

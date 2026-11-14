@@ -370,20 +370,22 @@ void main() {
     expect(session.gate, Gate.signedOut);
   });
 
-  testWidgets('services that are not open yet say coming soon', (tester) async {
+  testWidgets('Lab Tests says coming soon and does not open a request', (
+    tester,
+  ) async {
     await _open(
       tester,
       MallikaApp(session: SessionController.preview(Gate.ready)),
     );
     await tester.pump();
 
-    expect(find.text('Coming soon'), findsNWidgets(3));
+    expect(find.text('Coming soon'), findsOneWidget);
     expect(find.text('Dr. J Mahesh Babu'), findsOneWidget);
-    await tester.ensureVisible(find.bySemanticsLabel('CT Angio'));
-    await tester.tap(find.bySemanticsLabel('CT Angio'));
+    await tester.ensureVisible(find.bySemanticsLabel('Lab Tests'));
+    await tester.tap(find.bySemanticsLabel('Lab Tests'));
     await tester.pump();
     expect(
-      find.textContaining('CT Angio booking is coming soon'),
+      find.textContaining('Lab Tests booking is coming soon'),
       findsOneWidget,
     );
     expect(find.text('Request service'), findsNothing);
@@ -408,6 +410,32 @@ void main() {
       find.text('The hospital has not opened booking for this service yet.'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('CT Calcium and CT Angio open a date and time request', (
+    tester,
+  ) async {
+    for (final name in ['CT Calcium', 'CT Angio']) {
+      final session = await _signedIn(
+        api: _LinkedProfiles(),
+        bookings: _EchoOptions(),
+      );
+      await _open(tester, MallikaApp(session: session));
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(find.bySemanticsLabel(name));
+      await tester.tap(find.bySemanticsLabel(name));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Request service'), findsOneWidget);
+      expect(find.text(name), findsOneWidget);
+      expect(find.text('Choose a time'), findsOneWidget);
+      expect(
+        find.text('The hospital has not opened booking for this service yet.'),
+        findsNothing,
+      );
+      await tester.pumpWidget(const SizedBox());
+    }
   });
 }
 
@@ -528,6 +556,16 @@ class _EchoOptions extends BookingApi {
         CatalogueService(
           id: 'svc-echo',
           name: '4D Echo',
+          serviceType: 'diagnostics',
+        ),
+        CatalogueService(
+          id: 'svc-calcium',
+          name: 'CT Calcium',
+          serviceType: 'diagnostics',
+        ),
+        CatalogueService(
+          id: 'svc-angio',
+          name: 'CT Angio',
           serviceType: 'diagnostics',
         ),
       ],
