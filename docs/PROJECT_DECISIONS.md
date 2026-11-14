@@ -42,6 +42,10 @@ The login screens no longer have a terms checkbox. A line under the button says 
 
 The ambulance and SOS number is 96741 08108, given by the owner. It replaces 108.
 
+## Store reviewer login, 14 November 2026
+
+App store reviewers cannot receive a WhatsApp code. The owner agreed to one review number with a fixed code, set in the server's settings file and off by default. It is a normal patient account. Nothing is sent to that number. The request and wrong-guess limits are unchanged. It should be switched off when no review is running.
+
 ## Recommended, not built
 
 The architecture document requires a responsive web dashboard and says that dashboard calls the same versioned REST API. It does not name a frontend framework. The recommendation is React with TypeScript, created with Vite, living in `admin/` and talking only to `/api/v1/`. That application is not generated until the recommendation is confirmed. Responsibilities and the setup step are in `admin/README.md`.
