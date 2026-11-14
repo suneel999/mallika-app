@@ -1,10 +1,17 @@
-# Builds the patient app on Codemagic's Mac and uploads it to App Store Connect.
-# Start this workflow from the Codemagic site after the Apple key named "codemagic" is saved.
-# A tag such as ios-v1.0.0 starts the same workflow.
+# Builds the iPhone app on Codemagic's Mac and uploads it to App Store Connect.
+#
+# Before the first build (see store/ios/setup.md):
+#   1. In Codemagic, Team settings > Integrations > Developer Portal: add the
+#      App Store Connect API key and name it "codemagic".
+#   2. In Codemagic, Team settings > Code signing identities: generate an
+#      Apple Distribution certificate and fetch the App Store provisioning
+#      profile for com.mallikahospitals.mallikaHospitals.
+# Then start "iOS App Store" from the Codemagic site, or push a tag such as
+# ios-v1.0.0.
 workflows:
   ios-app-store:
     name: iOS App Store
-    max_build_duration: 90
+    max_build_duration: 60
     instance_type: mac_mini_m2
     working_directory: mobile
     integrations:
@@ -17,7 +24,6 @@ workflows:
         distribution_type: app_store
         bundle_identifier: com.mallikahospitals.mallikaHospitals
       vars:
-        BUNDLE_ID: com.mallikahospitals.mallikaHospitals
         API_BASE_URL: https://app.mallikahospitals.in/api/v1
     triggering:
       events:
@@ -26,35 +32,26 @@ workflows:
         - pattern: ios-v*
           include: true
     scripts:
-      - name: Set up the keychain
-        script: keychain initialize
-      - name: Fetch the App Store certificate
-        script: |
-          app-store-connect fetch-signing-files "$BUNDLE_ID" \
-            --type IOS_APP_STORE \
-            --create
-      - name: Add the certificate to the keychain
-        script: keychain add-certificates
       - name: Apply the provisioning profile
         script: xcode-project use-profiles
       - name: Get Flutter packages
         script: flutter pub get
-      - name: Install CocoaPods
-        script: find . -name Podfile -execdir pod install \;
       - name: Check the app
         script: |
           flutter analyze
           flutter test
       - name: Build the App Store package
+        # BUILD_NUMBER is Codemagic's run counter, so every upload has a new build number.
         script: |
           flutter build ipa --release \
+            --build-number="$BUILD_NUMBER" \
             --dart-define=API_BASE_URL="$API_BASE_URL" \
             --export-options-plist=/Users/builder/export_options.plist
     artifacts:
-      - mobile/build/ios/ipa/*.ipa
+      - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
     publishing:
       app_store_connect:
         auth: integration
-        submit_to_testflight: false
+        submit_to_testflight: true
         submit_to_app_store: false
