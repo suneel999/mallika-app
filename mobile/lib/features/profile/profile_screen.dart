@@ -66,12 +66,54 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _deleteAccount() async {
-    await showDialog<void>(
+    final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete account'),
+        title: const Text('Delete your account?'),
         content: const Text(
-          'The hospital closes patient accounts. This app cannot delete the account.',
+          'Your profile, family members, bookings and updates will be deleted from the hospital server within 7 days.\n\nYou will be signed out now. You cannot sign in with this number until the deletion is finished.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Keep account'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: MallikaColors.error),
+            child: const Text('Delete account'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) {
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      await widget.session.requestAccountDeletion();
+    } on ApiException catch (error) {
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _error = error.displayMessage;
+        });
+      }
+      return;
+    }
+    if (!mounted) {
+      return;
+    }
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Deletion requested'),
+        content: const Text(
+          'Your account will be deleted within 7 days. Call the hospital if you change your mind.',
         ),
         actions: [
           TextButton(
@@ -81,6 +123,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ],
       ),
     );
+    await widget.session.logout();
   }
 
   @override
@@ -110,7 +153,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               _ProfileHeader(
                 name: name.isEmpty ? 'Profile' : name,
-                patientNumber: self?.patientNumber ?? '',
                 onBack: _back,
               ),
               Expanded(
@@ -189,20 +231,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
 }
 
 class _ProfileHeader extends StatelessWidget {
-  const _ProfileHeader({
-    required this.name,
-    required this.patientNumber,
-    required this.onBack,
-  });
+  const _ProfileHeader({required this.name, required this.onBack});
 
   final String name;
-  final String patientNumber;
   final VoidCallback onBack;
 
   @override
   Widget build(BuildContext context) {
     final top = MediaQuery.paddingOf(context).top;
-    final initial = name.isEmpty ? 'P' : name[0].toUpperCase();
+    final plain = nameWithoutTitle(name);
+    final initial = plain.isEmpty ? 'P' : plain[0].toUpperCase();
     return ClipPath(
       clipper: _HeaderCurve(),
       child: DecoratedBox(
@@ -263,28 +301,6 @@ class _ProfileHeader extends StatelessWidget {
                   ),
                 ),
               ),
-              if (patientNumber.isNotEmpty) ...[
-                const SizedBox(height: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0x26FFFFFF),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    patientNumber,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.4,
-                    ),
-                  ),
-                ),
-              ],
             ],
           ),
         ),
@@ -336,7 +352,7 @@ class _AccountCard extends StatelessWidget {
             icon: Icons.delete_outline,
             iconColor: const Color(0xFFD92D20),
             iconBackground: const Color(0xFFFFE9EC),
-            title: 'Handled by the hospital',
+            title: 'Removes your data within 7 days',
             value: 'Delete Account',
             onTap: onDelete,
           ),

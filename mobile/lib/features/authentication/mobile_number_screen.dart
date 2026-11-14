@@ -25,7 +25,6 @@ class MobileNumberScreen extends StatefulWidget {
 class _MobileNumberScreenState extends State<MobileNumberScreen> {
   final _mobile = TextEditingController();
   var _busy = false;
-  var _agreed = false;
   String? _error;
 
   @override
@@ -37,11 +36,7 @@ class _MobileNumberScreenState extends State<MobileNumberScreen> {
   Future<void> _send() async {
     final digits = _mobile.text.trim();
     if (digits.length != 10) {
-      setState(() => _error = 'Enter a 10-digit Indian mobile number.');
-      return;
-    }
-    if (!_agreed) {
-      setState(() => _error = 'Agree to the terms to continue.');
+      setState(() => _error = 'Enter your 10-digit WhatsApp number.');
       return;
     }
     setState(() {
@@ -90,15 +85,16 @@ class _MobileNumberScreenState extends State<MobileNumberScreen> {
                 ),
                 const SizedBox(height: 6),
                 const Text(
-                  'Sign in with your mobile number',
+                  'Sign in with your WhatsApp number',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: authMuted, fontSize: 14),
                 ),
                 const SizedBox(height: 26),
                 AuthLabeledField(
-                  label: 'Mobile Number',
+                  label: 'WhatsApp Number',
                   child: AuthMobileField(
                     controller: _mobile,
+                    hint: 'Enter WhatsApp number',
                     onChanged: (_) => setState(() {}),
                   ),
                 ),
@@ -116,17 +112,19 @@ class _MobileNumberScreenState extends State<MobileNumberScreen> {
                     style: const TextStyle(color: authMuted, fontSize: 12),
                   ),
                 ],
-                const SizedBox(height: 16),
-                AuthAgreeRow(
-                  checked: _agreed,
-                  onChanged: (value) => setState(() => _agreed = value),
+                const SizedBox(height: 8),
+                const Text(
+                  'We send a 6-digit code to this number on WhatsApp.',
+                  style: TextStyle(color: authMuted, fontSize: 12.5),
                 ),
-                const SizedBox(height: 18),
+                const SizedBox(height: 20),
                 AuthGradientButton(
                   label: 'Login',
                   busy: _busy,
                   onPressed: _send,
                 ),
+                const SizedBox(height: 12),
+                const AuthConsentNote(),
                 const SizedBox(height: 14),
                 Center(
                   child: TextButton(

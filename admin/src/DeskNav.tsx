@@ -5,6 +5,7 @@ import { staffLogout } from "./api";
 const links = [
   ["/bookings", "Appointments", "📅"],
   ["/patients", "Patients", "👤"],
+  ["/deletions", "Delete requests", "🗑️"],
   ["/catalogue", "Doctors & services", "🩺"],
   ["/reports", "Reports", "📊"],
   ["/audit", "Activity log", "🕘"],

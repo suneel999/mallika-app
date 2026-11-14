@@ -43,6 +43,11 @@ class UserManager(BaseUserManager):
             raise ValueError("Superuser must have is_staff=True.")
         if extra_fields.get("is_superuser") is not True:
             raise ValueError("Superuser must have is_superuser=True.")
+        # Staff sign-in looks the number up as +91 and ten digits, so store it that way
+        # even when it was typed as ten digits.
+        from apps.accounts.phone import normalize_indian_mobile
+
+        mobile_number = normalize_indian_mobile(mobile_number)
         return self.create_user(mobile_number, password=password, **extra_fields)
 
 
@@ -145,6 +150,62 @@ class RefreshSession(models.Model):
 
     class Meta:
         db_table = "accounts_refreshsession"
+
+    def __str__(self):
+        return str(self.id)
+
+
+class DeletionStatus(models.TextChoices):
+    PENDING = "pending", "Pending"
+    COMPLETED = "completed", "Completed"
+    KEPT = "kept", "Kept"
+
+
+class AccountDeletionRequest(models.Model):
+    """A patient's request to have their account and data removed.
+
+    The account is switched off at once. Staff check it and delete the data
+    within seven days, or keep the account if the patient asks. After the data
+    is deleted the row stays as a record, without the mobile number.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="deletion_requests",
+    )
+    mobile_number = models.CharField(max_length=20, blank=True, default="")
+    status = models.CharField(
+        max_length=12,
+        choices=DeletionStatus.choices,
+        default=DeletionStatus.PENDING,
+    )
+    requested_at = models.DateTimeField(auto_now_add=True)
+    decided_at = models.DateTimeField(null=True, blank=True)
+    decided_by = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="deletion_decisions",
+    )
+
+    class Meta:
+        db_table = "accounts_deletionrequest"
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(status__in=["pending", "completed", "kept"]),
+                name="accounts_deletion_status_valid",
+            ),
+            models.UniqueConstraint(
+                fields=["user"],
+                condition=models.Q(status="pending"),
+                name="accounts_deletion_one_pending",
+            ),
+        ]
 
     def __str__(self):
         return str(self.id)

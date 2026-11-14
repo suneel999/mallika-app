@@ -8,6 +8,8 @@ const actionLabel: Record<string, string> = {
   "patient.search": "Searched for a patient",
   "patient.view": "Opened a patient",
   "patient.update": "Corrected a patient",
+  "account.delete": "Deleted an account",
+  "account.keep": "Kept an account",
 };
 
 export function Audit() {

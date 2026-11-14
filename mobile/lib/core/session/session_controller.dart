@@ -503,6 +503,14 @@ class SessionController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Asks for the account to be deleted. The caller signs out afterwards.
+  Future<void> requestAccountDeletion() async {
+    if (_demoOffline) {
+      return;
+    }
+    await _authed((access) => api.requestAccountDeletion(access));
+  }
+
   Future<void> logout() async {
     final refresh = await tokens.read(TokenStore.refreshKey);
     if (refresh != null && refresh.isNotEmpty) {

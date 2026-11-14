@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/theme.dart';
+import '../../core/phone.dart';
 import '../../core/session/session_controller.dart';
 import '../bookings/booking_screens.dart';
 import '../shared/mallika_widgets.dart';
@@ -57,33 +58,14 @@ class HomeScreen extends StatelessWidget {
                       _AppointmentsRow(onTap: onOpenBookings!),
                     ],
                     const SizedBox(height: 22),
-                    const Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          'Services',
-                          style: TextStyle(
-                            fontFamily: 'Plus Jakarta Sans',
-                            fontSize: 20,
-                            fontWeight: FontWeight.w800,
-                            color: MallikaColors.primary,
-                          ),
-                        ),
-                        SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            'Tap a card to request',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.end,
-                            style: TextStyle(
-                              color: MallikaColors.muted,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
+                    const Text(
+                      'Services',
+                      style: TextStyle(
+                        fontFamily: 'Plus Jakarta Sans',
+                        fontSize: 19,
+                        fontWeight: FontWeight.w800,
+                        color: MallikaColors.primary,
+                      ),
                     ),
                     const SizedBox(height: 12),
                     _ServiceGrid(session: session),
@@ -163,8 +145,7 @@ class _GreetingBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = session.profile?.fullName.trim() ?? '';
-    final first = name.isEmpty ? '' : name.split(RegExp(r'\s+')).first;
+    final first = givenName(session.profile?.fullName ?? '');
     final initial = first.isEmpty ? 'H' : first[0].toUpperCase();
     return Row(
       children: [
@@ -350,23 +331,23 @@ class _ServiceGrid extends StatelessWidget {
       rows.add(
         Padding(
           padding: EdgeInsets.only(top: index == 0 ? 0 : gap),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              for (var column = 0; column < rowCards.length; column++) ...[
-                if (column > 0) const SizedBox(width: gap),
-                Expanded(
-                  child: AspectRatio(
-                    aspectRatio: 1,
+          // Both cards in a row are as tall as the taller one.
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (var column = 0; column < rowCards.length; column++) ...[
+                  if (column > 0) const SizedBox(width: gap),
+                  Expanded(
                     child: _ServiceCard(
                       card: rowCards[column],
                       onTap: () =>
-                          _tapService(context, session, rowCards[column].tap),
+                          _tapService(context, session, rowCards[column]),
                     ),
                   ),
-                ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       );
@@ -383,128 +364,93 @@ class _ServiceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final soon = card.tap == HomeTap.soon;
+    final photo = card.photo;
     return Semantics(
       button: true,
       label: card.title,
       excludeSemantics: true,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: card.color.withValues(alpha: 0.14),
-              blurRadius: 16,
-              offset: const Offset(0, 8),
+      child: MallikaCard(
+        onTap: onTap,
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                IconTile(
+                  icon: card.icon,
+                  size: 46,
+                  color: Colors.white,
+                  background: soon
+                      ? card.color.withValues(alpha: 0.45)
+                      : card.color,
+                ),
+                if (photo != null) ...[
+                  const SizedBox(width: 8),
+                  // The doctor's face, beside the icon.
+                  Container(
+                    width: 50,
+                    height: 50,
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: MallikaColors.accent, width: 2),
+                    ),
+                    child: ClipOval(
+                      child: Image.asset(
+                        photo,
+                        fit: BoxFit.cover,
+                        filterQuality: FilterQuality.high,
+                      ),
+                    ),
+                  ),
+                ],
+                // Whatever is on the right shrinks before it can push the row too wide.
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: soon
+                        ? const FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: StatusPill(
+                              label: 'Coming soon',
+                              color: Color(0xFF9A5B00),
+                              background: Color(0xFFFFF3D6),
+                            ),
+                          )
+                        : photo != null
+                        ? const SizedBox.shrink()
+                        : const Icon(
+                            Icons.chevron_right,
+                            size: 20,
+                            color: Color(0xFF9AA5B8),
+                          ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              card.title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontFamily: 'Plus Jakarta Sans',
+                fontSize: 15,
+                height: 1.2,
+                fontWeight: FontWeight.w700,
+                color: soon ? MallikaColors.muted : MallikaColors.ink,
+              ),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              card.caption,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 12, color: MallikaColors.muted),
             ),
           ],
-        ),
-        child: Material(
-          color: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-            side: BorderSide(color: card.color.withValues(alpha: 0.16)),
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: Ink(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Colors.white, card.tint],
-                stops: const [0.25, 1],
-              ),
-            ),
-            child: InkWell(
-              onTap: onTap,
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final side = constraints.maxWidth;
-                  final pad = (side * 0.09).clamp(12.0, 20.0);
-                  final tileSize = (side * 0.32).clamp(42.0, 64.0);
-                  return Stack(
-                    children: [
-                      // Large faint copy of the icon in the corner.
-                      Positioned(
-                        right: -side * 0.12,
-                        bottom: -side * 0.12,
-                        child: Icon(
-                          card.icon,
-                          size: side * 0.62,
-                          color: card.color.withValues(alpha: 0.09),
-                        ),
-                      ),
-                      Padding(
-                        padding: EdgeInsets.all(pad),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Container(
-                                  width: tileSize,
-                                  height: tileSize,
-                                  decoration: BoxDecoration(
-                                    color: card.color,
-                                    borderRadius: BorderRadius.circular(
-                                      tileSize * 0.3,
-                                    ),
-                                  ),
-                                  child: Icon(
-                                    card.icon,
-                                    color: Colors.white,
-                                    size: tileSize * 0.54,
-                                  ),
-                                ),
-                                const Spacer(),
-                                Container(
-                                  width: 28,
-                                  height: 28,
-                                  decoration: const BoxDecoration(
-                                    color: Colors.white,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(
-                                    Icons.arrow_outward_rounded,
-                                    size: 16,
-                                    color: card.color,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const Spacer(),
-                            Text(
-                              card.title,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontFamily: 'Plus Jakarta Sans',
-                                fontSize: side < 150 ? 14 : 16,
-                                height: 1.2,
-                                fontWeight: FontWeight.w800,
-                                color: MallikaColors.ink,
-                              ),
-                            ),
-                            const SizedBox(height: 3),
-                            Text(
-                              card.caption,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: side < 150 ? 11 : 12.5,
-                                color: card.color,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              ),
-            ),
-          ),
         ),
       ),
     );
@@ -519,26 +465,18 @@ class _EmergencyStrip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFD92D20), Color(0xFFB42318)],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x33D92D20),
-            blurRadius: 16,
-            offset: Offset(0, 8),
-          ),
-        ],
+        color: const Color(0xFFFFF1F2),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFFECACA)),
       ),
       child: Row(
         children: [
-          const CircleAvatar(
-            radius: 18,
-            backgroundColor: Color(0x33FFFFFF),
-            child: Icon(Icons.emergency_rounded, color: Colors.white, size: 20),
+          const IconTile(
+            icon: Icons.emergency_rounded,
+            color: Colors.white,
+            background: Color(0xFFD92D20),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 12),
           const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -549,18 +487,18 @@ class _EmergencyStrip extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontFamily: 'Plus Jakarta Sans',
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 13.5,
+                    color: Color(0xFFB42318),
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
                     height: 1.2,
                   ),
                 ),
                 SizedBox(height: 2),
                 Text(
-                  'Immediate support for ICU on wheels',
+                  'Ambulance and ICU on wheels',
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: Color(0xFFFFE3E0), fontSize: 11.5),
+                  style: TextStyle(color: Color(0xFFB42318), fontSize: 12),
                 ),
               ],
             ),
@@ -569,11 +507,11 @@ class _EmergencyStrip extends StatelessWidget {
           FilledButton.icon(
             onPressed: () => _open(context, Uri.parse(emergencyPhoneUri)),
             style: FilledButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: const Color(0xFFB42318),
-              minimumSize: const Size(0, 38),
+              backgroundColor: const Color(0xFFD92D20),
+              foregroundColor: Colors.white,
+              minimumSize: const Size(0, 40),
               visualDensity: VisualDensity.compact,
-              padding: const EdgeInsets.symmetric(horizontal: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
               ),
@@ -657,12 +595,33 @@ class _CampusCard extends StatelessWidget {
   }
 }
 
-void _tapService(BuildContext context, SessionController session, HomeTap tap) {
-  switch (tap) {
+void _tapService(
+  BuildContext context,
+  SessionController session,
+  ClinicalCard card,
+) {
+  switch (card.tap) {
     case HomeTap.book:
       _openRequest(context, session, consultation: true);
-    case HomeTap.services:
-      _openPublishedServices(context, session);
+    case HomeTap.echo:
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => BookingRequestScreen(
+            session: session,
+            serviceName: echoServiceName,
+          ),
+        ),
+      );
+    case HomeTap.soon:
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(
+              '${card.title} booking is coming soon. Call the hospital for now.',
+            ),
+          ),
+        );
     case HomeTap.call:
       _open(context, Uri.parse(emergencyPhoneUri));
     case HomeTap.map:
@@ -679,14 +638,6 @@ void _openRequest(
     MaterialPageRoute<void>(
       builder: (_) =>
           BookingRequestScreen(session: session, consultation: consultation),
-    ),
-  );
-}
-
-void _openPublishedServices(BuildContext context, SessionController session) {
-  Navigator.of(context).push(
-    MaterialPageRoute<void>(
-      builder: (_) => PublishedServicesScreen(session: session),
     ),
   );
 }

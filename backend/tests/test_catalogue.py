@@ -84,3 +84,23 @@ class CatalogueApiTests(TestCase):
             "Come fasting if the hospital asks you to.",
         )
         self.assertNotIn("price", visible.json())
+
+
+class LaunchCatalogueTests(TestCase):
+    def test_the_launch_command_publishes_one_doctor_and_4d_echo_once(self):
+        from django.core.management import call_command
+
+        from apps.bookings.services import consultation_doctor
+        from apps.catalogue.models import Doctor, Service
+
+        Doctor.objects.create(full_name="Earlier Doctor", is_active=True, display_order=0)
+        call_command("publish_launch_catalogue", photo_url="https://example.test/doctor.jpg", verbosity=0)
+        call_command("publish_launch_catalogue", verbosity=0)
+
+        doctor = consultation_doctor()
+        self.assertEqual(doctor.full_name, "Dr. J Mahesh Babu")
+        self.assertEqual(doctor.specialty_summary, "Senior Cardiologist")
+        self.assertEqual(doctor.photo_url, "https://example.test/doctor.jpg")
+        self.assertEqual(Doctor.objects.filter(full_name="Dr. J Mahesh Babu").count(), 1)
+        self.assertEqual(Service.objects.filter(name="4D Echo", is_active=True).count(), 1)
+        self.assertFalse(Service.objects.filter(name__icontains="CT").exists())

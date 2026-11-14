@@ -23,7 +23,11 @@ def request_otp(raw_mobile: str) -> dict:
     now = timezone.now()
     existing = User.objects.filter(mobile_number=mobile).first()
     if existing is not None and (existing.user_kind != UserKind.PATIENT or not existing.is_active):
+        from apps.accounts.deletion import pending_deletion_for
+
         _consume_open_challenges(mobile, now)
+        if pending_deletion_for(mobile):
+            raise PermissionDenied("This account is being deleted. Call the hospital if you want to keep it.")
         return _otp_response(mobile)
 
     window_start = now - timedelta(hours=1)

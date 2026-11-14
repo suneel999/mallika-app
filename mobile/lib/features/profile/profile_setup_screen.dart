@@ -20,7 +20,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   final _last = TextEditingController();
   final _mobile = TextEditingController();
   String _title = '';
-  var _agreed = false;
   var _busy = false;
   String? _error;
 
@@ -46,10 +45,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     );
     if (_first.text.trim().length < 2) {
       setState(() => _error = 'Enter your full name.');
-      return;
-    }
-    if (!_agreed) {
-      setState(() => _error = 'Agree to the terms to continue.');
       return;
     }
     setState(() {
@@ -134,11 +129,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                     style: const TextStyle(color: MallikaColors.error),
                   ),
                 ],
-                const SizedBox(height: 16),
-                AuthAgreeRow(
-                  checked: _agreed,
-                  onChanged: (value) => setState(() => _agreed = value),
-                ),
                 const SizedBox(height: 18),
                 AuthGradientButton(
                   label: 'Save and continue',

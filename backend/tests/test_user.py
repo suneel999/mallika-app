@@ -34,3 +34,22 @@ class UserModelTests(TestCase):
         )
         self.assertTrue(user.check_password("not-a-real-password"))
         self.assertEqual(user.user_kind, "staff")
+
+
+class SuperuserMobileTests(TestCase):
+    def test_a_superuser_typed_as_ten_digits_can_sign_in_on_the_desk(self):
+        from rest_framework.test import APIClient
+
+        admin = User.objects.create_superuser("9800000222", "desk-secret-1")
+        self.assertEqual(admin.mobile_number, "+919800000222")
+        signed_in = APIClient().post(
+            "/api/v1/auth/staff/login/",
+            {"mobile_number": "9800000222", "password": "desk-secret-1"},
+            format="json",
+        )
+        self.assertEqual(signed_in.status_code, 200, signed_in.content)
+
+    def test_a_superuser_needs_a_real_mobile_number(self):
+        with self.assertRaises(ValueError):
+            User.objects.create_superuser("admin", "desk-secret-1")
+

@@ -4,6 +4,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { Audit } from "./Audit";
 import { BookingDesk } from "./BookingDesk";
 import { Catalogue } from "./Catalogue";
+import { Deletions } from "./Deletions";
 import { Patients } from "./Patients";
 import { Queue } from "./Queue";
 import { Reports } from "./Reports";
@@ -34,6 +35,14 @@ export function App() {
         element={
           <RequireStaff>
             <Audit />
+          </RequireStaff>
+        }
+      />
+      <Route
+        path="/deletions"
+        element={
+          <RequireStaff>
+            <Deletions />
           </RequireStaff>
         }
       />

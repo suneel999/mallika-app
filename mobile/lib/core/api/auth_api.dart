@@ -253,6 +253,16 @@ class AuthApi {
     );
   }
 
+  /// Asks the hospital to delete this account. The server signs it out.
+  Future<void> requestAccountDeletion(String access) async {
+    await _send(
+      'POST',
+      '/me/account-deletion/',
+      access: access,
+      allowEmpty: true,
+    );
+  }
+
   VerifiedSession _session(Map<String, dynamic> body) {
     final user = _map(body['user']);
     final profile = user['profile'];

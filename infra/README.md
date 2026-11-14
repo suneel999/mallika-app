@@ -18,6 +18,7 @@ The patient app calls `https://app.mallikahospitals.in/api/v1`. Reception opens 
 - `.env.example` lists the values the server needs. The real `.env` is never committed.
 - `setup-server.sh` prepares a new server.
 - `backup.sh` saves the database to S3.
+- `set-whatsapp-token.ps1` puts a new WhatsApp token on the server from this computer.
 
 The app is running on the server since 13 November 2026, with an empty database. HTTPS works on `https://app.mallikahospitals.in`. The old load balancer, Fargate service, and RDS database were deleted the same day; the snapshot `mallika-db-final-2026-11-13` is what remains of the old database. The code was sent as a bundle through the backup bucket (`deploy/app.tar.gz`), not with `git clone`, because it was not pushed yet. The nightly backup is scheduled and one backup was taken by hand. `docker compose config` accepts the compose file.
 
@@ -125,7 +126,15 @@ All server secrets are in one file on the server: `/home/ubuntu/mallika-app/infr
 | `DJANGO_SECRET_KEY` | Signs the API's tokens | Only if it leaks. Everyone has to sign in again |
 | `POSTGRES_PASSWORD` | The database password | Only if it leaks. Changing it here is not enough: the database user's password must be changed too |
 
-To change a value:
+To change the WhatsApp token from the office computer, without opening the server:
+
+```powershell
+powershell -File infra\set-whatsapp-token.ps1
+```
+
+It asks for the token with hidden typing, puts it on the server, restarts the API, and says whether Meta accepts it. It has been checked for syntax only; it has not been run with a real token yet.
+
+To change any value by hand on the server:
 
 ```bash
 sudo -iu ubuntu

@@ -547,11 +547,16 @@ class BookingRequestScreen extends StatefulWidget {
     required this.session,
     this.consultation = false,
     this.service,
+    this.serviceName,
   });
 
   final SessionController session;
   final bool consultation;
   final CatalogueService? service;
+
+  /// Requests the published service with this name. Used by a home card that
+  /// knows the name but not the id.
+  final String? serviceName;
 
   @override
   State<BookingRequestScreen> createState() => _BookingRequestScreenState();
@@ -571,7 +576,9 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
   String? _idempotencyKey;
   String? _fingerprint;
 
-  bool get _isConsultation => widget.consultation || widget.service == null;
+  bool get _isConsultation =>
+      widget.consultation ||
+      (widget.service == null && widget.serviceName == null);
 
   @override
   void initState() {
@@ -589,9 +596,18 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
       final options = await widget.session.loadBookingOptions();
       await widget.session.loadProfiles();
       _options = options;
+      final wanted = widget.serviceName?.trim().toLowerCase();
+      if (_service == null && wanted != null) {
+        for (final item in options.services) {
+          if (item.name.trim().toLowerCase() == wanted) {
+            _service = item;
+            break;
+          }
+        }
+      }
       _profileId = _selectedProfile(widget.session.profiles);
-      if (!_isConsultation && widget.service == null) {
-        _error = 'Choose a published service.';
+      if (!_isConsultation && _service == null) {
+        _error = 'The hospital has not opened booking for this service yet.';
       } else if (_isConsultation && options.doctor == null) {
         _error = 'The hospital has not published the consultation doctor yet.';
       }
@@ -708,9 +724,12 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
     final doctor = _options?.doctor;
     final target = _isConsultation
         ? (doctor?.fullName ?? 'Consultation')
-        : (_service?.name ?? 'Service');
+        : (_service?.name ?? widget.serviceName ?? 'Service');
     final qualification = _isConsultation
-        ? (doctor?.qualification ?? '').trim()
+        ? [doctor?.specialtySummary, doctor?.qualification]
+              .map((line) => (line ?? '').trim())
+              .where((line) => line.isNotEmpty)
+              .join(' · ')
         : (_service?.description ?? '').trim();
     final slots = _options?.timeSlots ?? const <String>[];
     final blocked =

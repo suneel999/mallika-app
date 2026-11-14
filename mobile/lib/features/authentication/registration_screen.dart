@@ -27,7 +27,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   final _last = TextEditingController();
   final _mobile = TextEditingController();
   String _title = '';
-  var _agreed = false;
   var _busy = false;
   String? _error;
 
@@ -51,11 +50,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     }
     final digits = _mobile.text.trim();
     if (digits.length != 10) {
-      setState(() => _error = 'Enter a 10-digit Indian mobile number.');
-      return;
-    }
-    if (!_agreed) {
-      setState(() => _error = 'Agree to the terms to continue.');
+      setState(() => _error = 'Enter your 10-digit WhatsApp number.');
       return;
     }
     setState(() {
@@ -132,9 +127,10 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                 ),
                 const SizedBox(height: 14),
                 AuthLabeledField(
-                  label: 'Mobile Number',
+                  label: 'WhatsApp Number',
                   child: AuthMobileField(
                     controller: _mobile,
+                    hint: 'Enter WhatsApp number',
                     onChanged: (_) => setState(() {}),
                   ),
                 ),
@@ -145,17 +141,14 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     style: const TextStyle(color: MallikaColors.error),
                   ),
                 ],
-                const SizedBox(height: 16),
-                AuthAgreeRow(
-                  checked: _agreed,
-                  onChanged: (value) => setState(() => _agreed = value),
-                ),
                 const SizedBox(height: 18),
                 AuthGradientButton(
                   label: 'Register',
                   busy: _busy,
                   onPressed: _submit,
                 ),
+                const SizedBox(height: 12),
+                const AuthConsentNote(),
                 const SizedBox(height: 16),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,

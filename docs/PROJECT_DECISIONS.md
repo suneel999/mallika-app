@@ -34,6 +34,14 @@ This file records choices made while scaffolding, and conflicts that are not res
 
 The owner chose one EC2 server and one S3 bucket over the load balancer, Fargate, and RDS, because the app expects about 100 appointments and 200 patients. The name is `app.mallikahospitals.in`. The API and the reception desk share that name: `/api/` is the API and everything else is the desk. PostgreSQL runs on the same server, with a nightly dump to S3. A server failure means downtime until it is restored. The files are in `infra/`. The move has not been made.
 
+## Account deletion, 13 November 2026
+
+The owner asked for account deletion that passes App Store review, with the hospital checking each request and deleting within a week. The patient starts it in the app. The account is switched off immediately and all sessions end. Staff finish it on the desk, or keep the account if the patient asks. Finishing deletes the user, the patient's own profile, family profiles saved on the account, their bookings with events and hospital-system checks, stored updates, and device tokens. The request row stays without the mobile number. An audit row records the counts. There is no automatic deletion after 7 days; that is a staff duty.
+
+The login screens no longer have a terms checkbox. A line under the button says that continuing means agreeing to the Privacy Policy and Terms of Service. Those two documents do not exist yet and are needed before a store listing.
+
+The ambulance and SOS number is 96741 08108, given by the owner. It replaces 108.
+
 ## Recommended, not built
 
 The architecture document requires a responsive web dashboard and says that dashboard calls the same versioned REST API. It does not name a frontend framework. The recommendation is React with TypeScript, created with Vite, living in `admin/` and talking only to `/api/v1/`. That application is not generated until the recommendation is confirmed. Responsibilities and the setup step are in `admin/README.md`.

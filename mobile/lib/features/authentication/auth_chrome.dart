@@ -326,11 +326,13 @@ class AuthMobileField extends StatelessWidget {
     required this.controller,
     this.readOnly = false,
     this.onChanged,
+    this.hint = 'Enter Mobile Number',
   });
 
   final TextEditingController controller;
   final bool readOnly;
   final ValueChanged<String>? onChanged;
+  final String hint;
 
   @override
   Widget build(BuildContext context) {
@@ -350,7 +352,7 @@ class AuthMobileField extends StatelessWidget {
         fontWeight: FontWeight.w600,
         letterSpacing: 0.4,
       ),
-      decoration: authInputDecoration('Enter Mobile Number').copyWith(
+      decoration: authInputDecoration(hint).copyWith(
         prefixIcon: const Padding(
           padding: EdgeInsets.only(left: 16, right: 10),
           child: Row(
@@ -382,52 +384,16 @@ class AuthMobileField extends StatelessWidget {
   }
 }
 
-class AuthAgreeRow extends StatelessWidget {
-  const AuthAgreeRow({
-    super.key,
-    required this.checked,
-    required this.onChanged,
-  });
-
-  final bool checked;
-  final ValueChanged<bool> onChanged;
+/// One quiet line under the button. There is no box to tick.
+class AuthConsentNote extends StatelessWidget {
+  const AuthConsentNote({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        SizedBox(
-          width: 24,
-          height: 24,
-          child: Checkbox(
-            value: checked,
-            activeColor: authNavy,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(5),
-            ),
-            side: const BorderSide(color: Color(0xFF94A3B8), width: 1.4),
-            onChanged: (value) => onChanged(value ?? false),
-          ),
-        ),
-        const SizedBox(width: 10),
-        const Expanded(
-          child: Text.rich(
-            TextSpan(
-              style: TextStyle(color: Color(0xFF334155), fontSize: 14),
-              children: [
-                TextSpan(text: 'I agree with '),
-                TextSpan(
-                  text: 'Privacy, Terms of Service',
-                  style: TextStyle(
-                    color: authLink,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
+    return const Text(
+      'By continuing, you agree to the Privacy Policy and Terms of Service of Mallika Hospitals.',
+      textAlign: TextAlign.center,
+      style: TextStyle(color: authMuted, fontSize: 12, height: 1.4),
     );
   }
 }

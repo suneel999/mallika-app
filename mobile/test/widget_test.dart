@@ -80,8 +80,7 @@ void main() {
         final right = rects[row * 2 + 1];
         expect(left.top, right.top);
         expect(left.width, right.width);
-        expect(left.height, left.width);
-        expect(right.height, right.width);
+        expect(left.height, right.height);
         expect(left.right, lessThan(right.left));
         expect(right.right - left.left, closeTo(width - 32, 1));
         if (row > 0) {
@@ -135,34 +134,28 @@ void main() {
     expect(find.text('Book for Family'), findsNothing);
   });
 
-  testWidgets('a home service tile opens published services by id', (
-    tester,
-  ) async {
-    final session = await _signedIn(
-      api: _LinkedProfiles(),
-      bookings: _ConsultationOptions(),
-      catalogue: _HeartService(),
-    );
-    await _open(tester, MallikaApp(session: session));
-    await tester.pumpAndSettle();
+  testWidgets(
+    'the 4D Echo card opens a date and time request for that service',
+    (tester) async {
+      final session = await _signedIn(
+        api: _LinkedProfiles(),
+        bookings: _EchoOptions(),
+      );
+      await _open(tester, MallikaApp(session: session));
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.bySemanticsLabel('4D Echo'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.bySemanticsLabel('4D Echo'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('Heart checkup'), findsOneWidget);
-    expect(
-      find.text('The hospital has not opened booking for this service yet.'),
-      findsNothing,
-    );
-
-    await tester.tap(find.text('Heart checkup'));
-    await tester.pumpAndSettle();
-    expect(find.text('Request service'), findsOneWidget);
-    expect(
-      find.text('The hospital has not opened booking for this service yet.'),
-      findsNothing,
-    );
-  });
+      expect(find.text('Request service'), findsOneWidget);
+      expect(find.text('4D Echo'), findsOneWidget);
+      expect(find.text('Choose a time'), findsOneWidget);
+      expect(
+        find.text('The hospital has not opened booking for this service yet.'),
+        findsNothing,
+      );
+    },
+  );
 
   testWidgets('bookings tab shows a pending request', (tester) async {
     final session = SessionController.preview(
@@ -232,7 +225,7 @@ void main() {
     expect(find.text('Patient Login'), findsOneWidget);
     await tester.tap(find.text('Login'));
     await tester.pump();
-    expect(find.text('Enter a 10-digit Indian mobile number.'), findsOneWidget);
+    expect(find.text('Enter your 10-digit WhatsApp number.'), findsOneWidget);
   });
 
   testWidgets('the test number signs in when the server is down', (
@@ -249,8 +242,6 @@ void main() {
       find.byKey(const Key('mobile-number')),
       '9999999999',
     );
-    await tester.tap(find.byType(Checkbox));
-    await tester.pump();
     await tester.tap(find.text('Login'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
@@ -328,6 +319,96 @@ void main() {
     await tester.pump();
     expect(find.textContaining('full name'), findsOneWidget);
   });
+
+  testWidgets('the greeting uses the first name, not the title', (
+    tester,
+  ) async {
+    final session = SessionController.preview(Gate.ready);
+    session.profile = const PatientProfile(
+      id: 'self',
+      patientNumber: 'MAL-PT-000001',
+      fullName: 'Mr Suneel Kumar',
+      dateOfBirth: null,
+      sex: null,
+      mobileNumber: '+919876543210',
+      preferredLanguage: 'en',
+    );
+    await _open(tester, MallikaApp(session: session));
+    await tester.pump();
+
+    expect(find.text('Hi Suneel'), findsOneWidget);
+    expect(find.text('Hi Mr'), findsNothing);
+    expect(find.textContaining('MAL-PT'), findsNothing);
+  });
+
+  testWidgets('delete account asks first, tells the server, and signs out', (
+    tester,
+  ) async {
+    final api = _DeletingAuth();
+    final session = await _signedIn(api: api);
+    session.profiles = [session.profile!];
+    await _open(tester, MaterialApp(home: ProfileScreen(session: session)));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('MAL-PT'), findsNothing);
+
+    await tester.tap(find.text('Delete Account'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('within 7 days'), findsWidgets);
+    await tester.tap(find.text('Keep account'));
+    await tester.pumpAndSettle();
+    expect(api.deletionRequests, 0);
+    expect(session.gate, Gate.ready);
+
+    await tester.tap(find.text('Delete Account'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete account'));
+    await tester.pumpAndSettle();
+    expect(api.deletionRequests, 1);
+    expect(find.text('Deletion requested'), findsOneWidget);
+    await tester.tap(find.text('OK'));
+    await tester.pumpAndSettle();
+    expect(session.gate, Gate.signedOut);
+  });
+
+  testWidgets('services that are not open yet say coming soon', (tester) async {
+    await _open(
+      tester,
+      MallikaApp(session: SessionController.preview(Gate.ready)),
+    );
+    await tester.pump();
+
+    expect(find.text('Coming soon'), findsNWidgets(3));
+    expect(find.text('Dr. J Mahesh Babu'), findsOneWidget);
+    await tester.ensureVisible(find.bySemanticsLabel('CT Angio'));
+    await tester.tap(find.bySemanticsLabel('CT Angio'));
+    await tester.pump();
+    expect(
+      find.textContaining('CT Angio booking is coming soon'),
+      findsOneWidget,
+    );
+    expect(find.text('Request service'), findsNothing);
+  });
+
+  testWidgets('4D Echo says so when the hospital has not published it', (
+    tester,
+  ) async {
+    final session = await _signedIn(
+      api: _LinkedProfiles(),
+      bookings: _ConsultationOptions(),
+    );
+    await _open(
+      tester,
+      MaterialApp(
+        home: BookingRequestScreen(session: session, serviceName: '4D Echo'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('The hospital has not opened booking for this service yet.'),
+      findsOneWidget,
+    );
+  });
 }
 
 Future<SessionController> _signedIn({
@@ -355,6 +436,34 @@ Future<SessionController> _signedIn({
   );
   await session.tokens.write(TokenStore.accessKey, 'preview-access');
   return session;
+}
+
+class _DeletingAuth extends AuthApi {
+  var deletionRequests = 0;
+
+  @override
+  Future<List<PatientProfile>> listProfiles(String access) async {
+    return const [
+      PatientProfile(
+        id: 'self',
+        patientNumber: 'MAL-PT-000001',
+        fullName: 'Preview Patient',
+        dateOfBirth: null,
+        sex: null,
+        mobileNumber: '+919876543210',
+        preferredLanguage: 'en',
+        relationship: 'self',
+      ),
+    ];
+  }
+
+  @override
+  Future<void> requestAccountDeletion(String access) async {
+    deletionRequests += 1;
+  }
+
+  @override
+  Future<void> logout(String refreshToken) async {}
 }
 
 class _OfflineAuth extends AuthApi {
@@ -409,20 +518,20 @@ class _LinkedProfiles extends AuthApi {
   }
 }
 
-class _HeartService extends CatalogueApi {
+class _EchoOptions extends BookingApi {
   @override
-  Future<List<CatalogueService>> services(
-    String access, {
-    String search = '',
-    String serviceType = '',
-  }) async {
-    return const [
-      CatalogueService(
-        id: 'svc-1',
-        name: 'Heart checkup',
-        serviceType: 'health_checkup',
-      ),
-    ];
+  Future<BookingOptions> options(String access) async {
+    return const BookingOptions(
+      doctor: ConsultationDoctor(id: 'doctor', fullName: 'Hospital Doctor'),
+      timeSlots: ['10:00', '16:00'],
+      services: [
+        CatalogueService(
+          id: 'svc-echo',
+          name: '4D Echo',
+          serviceType: 'diagnostics',
+        ),
+      ],
+    );
   }
 }
 

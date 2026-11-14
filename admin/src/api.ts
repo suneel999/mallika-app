@@ -395,3 +395,23 @@ export async function saveHospitalCheck(
     }),
   );
 }
+
+export type AccountDeletion = {
+  id: string;
+  status: string;
+  mobile_number: string | null;
+  patient_name: string | null;
+  open_bookings: number;
+  requested_at: string;
+  delete_by: string;
+  decided_at: string | null;
+};
+
+export async function listAccountDeletions(): Promise<AccountDeletion[]> {
+  const body = (await decode(await request("/admin/account-deletions/?status=pending&limit=100"))) as Page<AccountDeletion>;
+  return body.results ?? [];
+}
+
+export async function decideAccountDeletion(requestId: string, decision: "complete" | "keep") {
+  await decode(await request(`/admin/account-deletions/${requestId}/${decision}/`, { method: "POST" }));
+}
